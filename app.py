@@ -17,57 +17,57 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
-    /* Global styles */
-    html, body, [data-testid="stAppViewContainer"] {
+    /* Global styles (Scandinavian Minimalist Light Mode) */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stMain"], .main, section.main {
         font-family: 'Outfit', sans-serif;
-        background-color: #060913;
-        color: #e2e8f0;
+        background-color: #f7f6f5 !important;
+        color: #1e1e24;
     }
     
     /* Remove default Streamlit top whitespace */
     [data-testid="block-container"] {
-        padding-top: 1.5rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
     }
     
     /* Glassmorphic border container overrides (KPI and participant cards) */
     div[data-testid="stVerticalBlockBorderEffect"] {
-        background-color: rgba(15, 23, 42, 0.45) !important;
+        background-color: rgba(255, 255, 255, 0.75) !important;
         backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
         border-radius: 20px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4) !important;
+        padding: 1.2rem !important;
+        box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.04) !important;
         transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease !important;
     }
     div[data-testid="stVerticalBlockBorderEffect"]:hover {
-        border-color: rgba(99, 102, 241, 0.25) !important;
-        box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.08) !important;
+        border-color: rgba(16, 185, 129, 0.2) !important;
+        box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.06) !important;
     }
     
     /* Header Styling */
     .title-container {
         text-align: center;
-        padding: 1.5rem 0 1rem 0;
-        margin-bottom: 1.5rem;
-        background: radial-gradient(circle at top, rgba(99, 102, 241, 0.08) 0%, rgba(6, 9, 19, 0) 70%);
+        padding: 0.8rem 0 0.5rem 0;
+        margin-bottom: 0.75rem;
+        background: radial-gradient(circle at top, rgba(16, 185, 129, 0.04) 0%, rgba(252, 251, 250, 0) 70%);
     }
     .main-title {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 2.8rem;
+        font-size: 2.6rem;
         font-weight: 700;
         letter-spacing: -0.04em;
-        background: linear-gradient(135deg, #00ff87 0%, #60efff 50%, #00f5d4 100%);
+        background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #4f46e5 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
     }
     .subtitle {
-        font-size: 0.95rem;
-        color: #94a3b8;
-        margin-top: 0.4rem;
-        font-weight: 400;
-        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 0.3rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
     
@@ -117,37 +117,37 @@ st.markdown("""
         overflow: hidden !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: none !important;
-        background-color: rgba(30, 41, 59, 0.3) !important;
-        border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+        background-color: rgba(0, 0, 0, 0.035) !important;
+        border: 1px dashed rgba(0, 0, 0, 0.12) !important;
     }
     
     /* Hover transitions: translation and glow shadow */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:hover {
         transform: translateY(-2px) scale(1.08) !important;
-        border-color: rgba(255, 255, 255, 0.4) !important;
+        border-color: rgba(0, 0, 0, 0.3) !important;
         cursor: pointer !important;
     }
     
     /* Green status cell: Done */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]) {
-        background-color: rgba(16, 185, 129, 0.12) !important;
+        background-color: rgba(16, 185, 129, 0.08) !important;
         border: 1.5px solid #10b981 !important;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.2) !important;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.12) !important;
     }
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]):hover {
-        border-color: #34d399 !important;
-        box-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+        border-color: #059669 !important;
+        box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25) !important;
     }
     
     /* Red status cell: Failed */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]) {
-        background-color: rgba(239, 68, 68, 0.12) !important;
+        background-color: rgba(239, 68, 68, 0.06) !important;
         border: 1.5px solid #ef4444 !important;
-        box-shadow: 0 0 8px rgba(239, 68, 68, 0.2) !important;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08) !important;
     }
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]):hover {
-        border-color: #f87171 !important;
-        box-shadow: 0 0 12px rgba(248, 113, 113, 0.4) !important;
+        border-color: #dc2626 !important;
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2) !important;
     }
     
     /* Style the input inside the waffle cell */
@@ -191,11 +191,11 @@ st.markdown("""
         width: 132px !important;
         min-width: 132px !important;
         height: 44px !important;
-        background-color: #0b0f19 !important; /* Premium dark background */
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background-color: #ffffff !important; /* Pure white background in light mode */
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
         border-radius: 12px !important;
         padding: 4px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
         display: flex !important;
         flex-direction: row !important; /* Lay items horizontally */
         align-items: center !important;
@@ -235,13 +235,13 @@ st.markdown("""
         transition: background-color 0.15s ease !important;
     }
     div[data-testid="stSelectboxVirtualDropdown"] [role="option"]:hover {
-        background-color: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(0, 0, 0, 0.04) !important;
     }
     
     /* Force text/emojis inside options to be centered, fully visible, and keep native colors */
     div[data-testid="stSelectboxVirtualDropdown"] [role="option"] * {
         background-color: transparent !important;
-        color: #f8fafc !important; /* Ensure light text contrast */
+        color: #1c1917 !important; /* Dark text contrast for light mode */
         font-size: 1.25rem !important; /* Beautiful large emoji size */
         display: flex !important;
         justify-content: center !important;
@@ -255,33 +255,67 @@ st.markdown("""
     
     /* Expander customizations */
     div[data-testid="stExpander"] {
-        background-color: rgba(15, 23, 42, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background-color: rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
         border-radius: 12px !important;
         margin-top: 1rem !important;
     }
     
     /* Quirky, modern button style */
     .stButton>button {
-        background: linear-gradient(135deg, #00ff87, #60efff) !important;
-        color: #060913 !important; /* Deep dark text for high contrast and classy feel */
+        background: linear-gradient(135deg, #10b981, #06b6d4) !important;
+        color: #ffffff !important; /* Clean white text on gradient */
         border: none !important;
         border-radius: 10px !important;
         padding: 0.55rem 1.6rem !important;
         font-family: 'Space Grotesk', sans-serif;
         font-weight: 600 !important;
         width: 100%;
-        box-shadow: 0 4px 15px 0 rgba(0, 255, 135, 0.18) !important;
+        box-shadow: 0 4px 15px 0 rgba(16, 185, 129, 0.2) !important;
         transition: all 0.25s ease-in-out !important;
     }
     .stButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 22px 0 rgba(0, 255, 135, 0.35) !important;
+        box-shadow: 0 6px 22px 0 rgba(16, 185, 129, 0.3) !important;
     }
     
     /* Hide sidebar and toggle control */
     section[data-testid="stSidebar"], [data-testid="collapsedControl"] {
         display: none !important;
+    }
+    
+    /* Custom Micro Stats Badge Styling */
+    .stats-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 0.8rem;
+    }
+    .stat-tag {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid transparent;
+    }
+    .stat-tag.success {
+        background-color: rgba(16, 185, 129, 0.08);
+        color: #065f46;
+        border-color: rgba(16, 185, 129, 0.15);
+    }
+    .stat-tag.streak {
+        background-color: rgba(245, 158, 11, 0.08);
+        color: #92400e;
+        border-color: rgba(245, 158, 11, 0.15);
+    }
+    .stat-tag.danger {
+        background-color: rgba(239, 68, 68, 0.06);
+        color: #991b1b;
+        border-color: rgba(239, 68, 68, 0.12);
     }
     
     /* Mobile-first responsive styling overrides */
@@ -291,7 +325,7 @@ st.markdown("""
             font-size: 2.0rem !important;
         }
         .subtitle {
-            font-size: 0.8rem !important;
+            font-size: 0.78rem !important;
         }
         
         /* Adjust card padding to save screen space */
@@ -630,7 +664,15 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
         
     row_data = habit_rows.iloc[0]
     actual_habit_description = row_data["HabitType"]
-    st.markdown(f"<div style='font-size: 0.9rem; color: #94a3b8; font-weight: 600; margin-bottom: 0.25rem;'>{emoji_prefix.upper()} - {actual_habit_description}</div>", unsafe_allow_html=True)
+    
+    # Clean up redundant prefix Do: / Drop:
+    desc = actual_habit_description
+    for prefix in ["do:", "drop:"]:
+        if desc.lower().startswith(prefix):
+            desc = desc[len(prefix):].strip()
+            
+    icon = "🟢" if habit_type.lower() == "do" else "🔴"
+    st.markdown(f"<div style='font-size: 0.85rem; color: #4b5563; font-weight: 600; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'>{icon} {desc}</div>", unsafe_allow_html=True)
     
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
@@ -671,7 +713,7 @@ members_list = sorted(df["Member"].unique()) if not df.empty else []
 
 for member in members_list:
     with st.container(border=True):
-        st.markdown(f"<h3 style='margin: 0 0 1rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #f8fafc;'>👤 {member}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='margin: 0 0 1rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #1c1917;'>👤 {member}</h3>", unsafe_allow_html=True)
         
         member_rows = df[df["Member"] == member]
         
@@ -682,11 +724,23 @@ for member in members_list:
         col1, col2 = st.columns(2, gap="large")
         
         with col1:
-            st.markdown(f"<div style='font-size: 0.85rem; color: #10b981; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'><b>🟢 Daily DO:</b> {do_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {do_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {do_failed}</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="stats-row">
+                <span class="stat-tag success">🟢 {do_done}/75d</span>
+                <span class="stat-tag streak">🔥 Streak: {do_streak}d</span>
+                <span class="stat-tag danger">❌ Failed: {do_failed}</span>
+            </div>
+            """, unsafe_allow_html=True)
             render_waffle(member, member_rows, "Do", "Daily DO", "do")
             
         with col2:
-            st.markdown(f"<div style='font-size: 0.85rem; color: #ef4444; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'><b>🔴 Daily DROP:</b> {drop_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {drop_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {drop_failed}</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="stats-row">
+                <span class="stat-tag success">🔴 {drop_done}/75d</span>
+                <span class="stat-tag streak">🔥 Streak: {drop_streak}d</span>
+                <span class="stat-tag danger">❌ Failed: {drop_failed}</span>
+            </div>
+            """, unsafe_allow_html=True)
             render_waffle(member, member_rows, "Drop", "Daily DROP", "drop")
         
     st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
