@@ -433,27 +433,26 @@ def init_mock_data():
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/edit?usp=sharing"
 CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv"
 
-# Force load from cloud if local file is missing or contains old mock data (e.g. Rohit)
-force_load_cloud = False
-if os.path.exists(LOCAL_FILE):
-    try:
-        temp_df = pd.read_csv(LOCAL_FILE)
-        if "Member" in temp_df.columns and any(name in temp_df["Member"].values for name in ["Rohit", "Sarah", "Alex"]):
-            force_load_cloud = True
-    except:
-        force_load_cloud = True
-
-if os.path.exists(LOCAL_FILE) and not force_load_cloud:
-    df = pd.read_csv(LOCAL_FILE)
-    df = clean_dataframe(df)
-else:
+# Auto-sync from Google Sheets on initial page load / browser refresh
+if "has_synced" not in st.session_state:
+    st.session_state["has_synced"] = True
     try:
         df = pd.read_csv(CSV_URL)
         df = clean_dataframe(df)
         df.to_csv(LOCAL_FILE, index=False)
-        st.toast("🔗 Loaded fresh data from Google Sheet!", icon="🔗")
+        st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
     except Exception as e:
-        st.toast(f"⚠️ Google Sheets failed. Using mock data: {e}", icon="⚠️")
+        st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
+        if os.path.exists(LOCAL_FILE):
+            df = pd.read_csv(LOCAL_FILE)
+            df = clean_dataframe(df)
+        else:
+            df = init_mock_data()
+else:
+    if os.path.exists(LOCAL_FILE):
+        df = pd.read_csv(LOCAL_FILE)
+        df = clean_dataframe(df)
+    else:
         df = init_mock_data()
 
 # Check if Streamlit GSheets secrets are configured
