@@ -15,68 +15,60 @@ st.set_page_config(
 # glassmorphism, and responsive waffle grid adjustments.
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
     /* Global styles */
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Outfit', sans-serif;
-        background-color: #0b0f19;
-        color: #f1f5f9;
+        background-color: #060913;
+        color: #e2e8f0;
     }
     
     /* Remove default Streamlit top whitespace */
     [data-testid="block-container"] {
-        padding-top: 1.2rem !important;
-        padding-bottom: 1rem !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Glassmorphic border container overrides (KPI and participant cards) */
+    div[data-testid="stVerticalBlockBorderEffect"] {
+        background-color: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4) !important;
+        transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease !important;
+    }
+    div[data-testid="stVerticalBlockBorderEffect"]:hover {
+        border-color: rgba(99, 102, 241, 0.25) !important;
+        box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.08) !important;
     }
     
     /* Header Styling */
     .title-container {
         text-align: center;
-        padding: 2rem 0 1rem 0;
+        padding: 1.5rem 0 1rem 0;
         margin-bottom: 1.5rem;
-        background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, rgba(11, 15, 25, 0) 100%);
-        border-radius: 20px;
+        background: radial-gradient(circle at top, rgba(99, 102, 241, 0.08) 0%, rgba(6, 9, 19, 0) 70%);
     }
     .main-title {
+        font-family: 'Space Grotesk', sans-serif;
         font-size: 2.8rem;
-        font-weight: 800;
-        letter-spacing: -0.05em;
-        background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        background: linear-gradient(135deg, #00ff87 0%, #60efff 50%, #00f5d4 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
     }
     .subtitle {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         color: #94a3b8;
-        margin-top: 0.5rem;
+        margin-top: 0.4rem;
         font-weight: 400;
-    }
-    
-    /* Glassmorphic Cards */
-    .card {
-        background: rgba(30, 41, 59, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 1.5rem;
-        backdrop-filter: blur(12px);
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.2);
-        transition: transform 0.2s, border-color 0.2s;
-    }
-    .card:hover {
-        border-color: rgba(99, 102, 241, 0.2);
-    }
-    
-    /* Section Headers */
-    .section-header {
-        font-size: 1.4rem;
-        font-weight: 600;
-        color: #f8fafc;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
     }
     
     /* Waffle Grid customization */
@@ -87,13 +79,13 @@ st.markdown("""
     /* Target only the 15-column rows of the waffle grid to set a compact gap and max-width */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
         max-width: 470px !important;
-        gap: 3px !important;
-        margin-bottom: 3px !important;
+        gap: 4px !important;
+        margin-bottom: 4px !important;
         flex-wrap: nowrap !important;
         overflow: visible !important;
     }
     
-    /* Style only the nested waffle columns to be exactly 28px wide to prevent stretching/deforming */
+    /* Style only the nested waffle columns to be exactly 28px wide to prevent deforming */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
         width: 28px !important;
         min-width: 28px !important;
@@ -114,26 +106,51 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Style the React-Aria ComboBox Group wrapper */
+    /* Default group styling for waffle cells */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
         width: 28px !important;
         height: 28px !important;
-        background-color: #1e293b !important; /* Solid dark slate cell */
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 4px !important;
+        border-radius: 6px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         overflow: hidden !important;
-        transition: border-color 0.2s, background-color 0.2s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: none !important;
-    }
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:hover {
-        border-color: rgba(99, 102, 241, 0.5) !important;
-        background-color: #2d3748 !important;
+        background-color: rgba(30, 41, 59, 0.3) !important;
+        border: 1px dashed rgba(255, 255, 255, 0.15) !important;
     }
     
-    /* Style the input element that displays the emoji */
+    /* Hover transitions: translation and glow shadow */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:hover {
+        transform: translateY(-2px) scale(1.08) !important;
+        border-color: rgba(255, 255, 255, 0.4) !important;
+        cursor: pointer !important;
+    }
+    
+    /* Green status cell: Done */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]) {
+        background-color: rgba(16, 185, 129, 0.12) !important;
+        border: 1.5px solid #10b981 !important;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.2) !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]):hover {
+        border-color: #34d399 !important;
+        box-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+    }
+    
+    /* Red status cell: Failed */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]) {
+        background-color: rgba(239, 68, 68, 0.12) !important;
+        border: 1.5px solid #ef4444 !important;
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.2) !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]):hover {
+        border-color: #f87171 !important;
+        box-shadow: 0 0 12px rgba(248, 113, 113, 0.4) !important;
+    }
+    
+    /* Style the input inside the waffle cell */
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
         width: 28px !important;
         height: 26px !important;
@@ -142,10 +159,15 @@ st.markdown("""
         padding: 0 !important;
         margin: 0 !important;
         text-align: center !important;
-        font-size: 1.15rem !important; /* Large, crisp emoji rendering */
+        font-size: 1.1rem !important;
         line-height: 26px !important;
         cursor: pointer !important;
-        caret-color: transparent !important; /* Hide input cursor */
+        caret-color: transparent !important;
+    }
+    
+    /* Hide the ⬜ emoji text in empty cells to reveal a clean dashed slot background */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="⬜"]) input {
+        color: transparent !important;
     }
     
     /* Hide the default dropdown SVG arrow/button inside the grid cell */
@@ -155,7 +177,8 @@ st.markdown("""
         height: 0px !important;
         padding: 0 !important;
     }
-      /* Ensure the selectbox dropdown container has a horizontal, aesthetic width with breathing room */
+    
+    /* Ensure the selectbox dropdown container has a horizontal, aesthetic width with breathing room */
     div[data-testid="stSelectboxVirtualDropdown"] {
         width: 132px !important;
         min-width: 132px !important;
@@ -168,11 +191,11 @@ st.markdown("""
         width: 132px !important;
         min-width: 132px !important;
         height: 44px !important;
-        background-color: #1e293b !important; /* Solid dark slate dropdown card */
+        background-color: #0b0f19 !important; /* Premium dark background */
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
+        border-radius: 12px !important;
         padding: 4px !important;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
         display: flex !important;
         flex-direction: row !important; /* Lay items horizontally */
         align-items: center !important;
@@ -205,7 +228,7 @@ st.markdown("""
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         cursor: pointer !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -230,22 +253,30 @@ st.markdown("""
         overflow: visible !important; /* Prevent child clipping */
     }
     
-    /* Custom buttons */
+    /* Expander customizations */
+    div[data-testid="stExpander"] {
+        background-color: rgba(15, 23, 42, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-radius: 12px !important;
+        margin-top: 1rem !important;
+    }
+    
+    /* Quirky, modern button style */
     .stButton>button {
-        background: linear-gradient(95deg, #4f46e5, #7c3aed) !important;
-        color: #ffffff !important;
+        background: linear-gradient(135deg, #00ff87, #60efff) !important;
+        color: #060913 !important; /* Deep dark text for high contrast and classy feel */
         border: none !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1.5rem !important;
+        border-radius: 10px !important;
+        padding: 0.55rem 1.6rem !important;
+        font-family: 'Space Grotesk', sans-serif;
         font-weight: 600 !important;
         width: 100%;
-        box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.3) !important;
-        transition: all 0.2s ease-in-out !important;
+        box-shadow: 0 4px 15px 0 rgba(0, 255, 135, 0.18) !important;
+        transition: all 0.25s ease-in-out !important;
     }
     .stButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.5) !important;
-        background: linear-gradient(95deg, #5b52f9, #8b4bfb) !important;
+        box-shadow: 0 6px 22px 0 rgba(0, 255, 135, 0.35) !important;
     }
     
     /* Hide sidebar and toggle control */
@@ -441,27 +472,28 @@ def save_and_sync():
         st.error(f"Failed to auto-save: {e}")
 
 # Main page action buttons (Save button removed, auto-save active)
-col_sync, col_status = st.columns([2.5, 9.5])
-
-with col_sync:
-    if st.button("🔄 Sync from Sheet"):
-        try:
-            df_cloud = pd.read_csv(CSV_URL)
-            df_cloud = clean_dataframe(df_cloud)
-            df_cloud.to_csv(LOCAL_FILE, index=False)
-            st.toast("Synchronized with Google Sheet!", icon="🔄")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Sync failed: {e}")
-
-with col_status:
-    gscript_url = st.session_state.get("gscript_url", "").strip()
-    if gscript_url:
-        st.markdown("<div style='font-size: 0.85rem; color: #10b981; padding-top: 0.65rem; font-weight: 600;'>☁️ Auto-sync active (Cloud Web App Mode)</div>", unsafe_allow_html=True)
-    elif is_gsheets_configured():
-        st.markdown("<div style='font-size: 0.85rem; color: #10b981; padding-top: 0.65rem; font-weight: 600;'>☁️ Auto-sync active (Secrets Mode)</div>", unsafe_allow_html=True)
-    else:
-        st.markdown("<div style='font-size: 0.85rem; color: #f59e0b; padding-top: 0.65rem;'>📂 Auto-save active (Local Mode - configure cloud settings below to sync)</div>", unsafe_allow_html=True)
+with st.container(border=True):
+    col_sync, col_status = st.columns([2.5, 9.5])
+    
+    with col_sync:
+        if st.button("🔄 Sync from Sheet"):
+            try:
+                df_cloud = pd.read_csv(CSV_URL)
+                df_cloud = clean_dataframe(df_cloud)
+                df_cloud.to_csv(LOCAL_FILE, index=False)
+                st.toast("Synchronized with Google Sheet!", icon="🔄")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Sync failed: {e}")
+    
+    with col_status:
+        gscript_url = st.session_state.get("gscript_url", "").strip()
+        if gscript_url:
+            st.markdown("<div style='font-size: 0.85rem; color: #10b981; padding-top: 0.65rem; font-weight: 600;'>☁️ Auto-sync active (Cloud Web App Mode)</div>", unsafe_allow_html=True)
+        elif is_gsheets_configured():
+            st.markdown("<div style='font-size: 0.85rem; color: #10b981; padding-top: 0.65rem; font-weight: 600;'>☁️ Auto-sync active (Secrets Mode)</div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='font-size: 0.85rem; color: #f59e0b; padding-top: 0.65rem;'>📂 Auto-save active (Local Mode - configure cloud settings below to sync)</div>", unsafe_allow_html=True)
 
 # Google Sheet Cloud Settings Expander
 with st.expander("⚙️ Google Sheet Cloud Sync Settings"):
@@ -587,27 +619,27 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
                     on_change=save_and_sync
                 )
 
-# Display each participant's grids one below the other
+# Display each participant's grids inside modern glass containers
 members_list = sorted(df["Member"].unique()) if not df.empty else []
 
 for member in members_list:
-    st.markdown(f"<h3 style='margin: 1.5rem 0 0.5rem 0; font-size: 1.3rem; font-weight: 700; color: #f8fafc;'>👤 {member}</h3>", unsafe_allow_html=True)
-    
-    member_rows = df[df["Member"] == member]
-    
-    # Calculate stats
-    do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
-    drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
-    
-    col1, col2 = st.columns(2, gap="large")
-    
-    with col1:
-        st.markdown(f"<div style='font-size: 0.85rem; color: #10b981; margin-bottom: 0.4rem;'><b>🟢 Daily DO:</b> {do_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {do_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {do_failed}</div>", unsafe_allow_html=True)
-        render_waffle(member, member_rows, "Do", "Daily DO", "do")
+    with st.container(border=True):
+        st.markdown(f"<h3 style='margin: 0 0 1rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #f8fafc;'>👤 {member}</h3>", unsafe_allow_html=True)
         
-    with col2:
-        st.markdown(f"<div style='font-size: 0.85rem; color: #ef4444; margin-bottom: 0.4rem;'><b>🔴 Daily DROP:</b> {drop_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {drop_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {drop_failed}</div>", unsafe_allow_html=True)
-        render_waffle(member, member_rows, "Drop", "Daily DROP", "drop")
+        member_rows = df[df["Member"] == member]
+        
+        # Calculate stats
+        do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
+        drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
+        
+        col1, col2 = st.columns(2, gap="large")
+        
+        with col1:
+            st.markdown(f"<div style='font-size: 0.85rem; color: #10b981; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'><b>🟢 Daily DO:</b> {do_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {do_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {do_failed}</div>", unsafe_allow_html=True)
+            render_waffle(member, member_rows, "Do", "Daily DO", "do")
+            
+        with col2:
+            st.markdown(f"<div style='font-size: 0.85rem; color: #ef4444; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'><b>🔴 Daily DROP:</b> {drop_done}/75 days &nbsp;|&nbsp; <b>🔥 Max Streak:</b> {drop_streak} days &nbsp;|&nbsp; <b>❌ Failed:</b> {drop_failed}</div>", unsafe_allow_html=True)
+            render_waffle(member, member_rows, "Drop", "Daily DROP", "drop")
         
     st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
-    st.divider()
