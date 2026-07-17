@@ -743,3 +743,77 @@ for member in members_list:
             render_waffle(member, member_rows, "Drop", "Daily DROP", "drop")
         
     st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+
+# ----------------- HOVER INTERACTIONS JS INJECTION -----------------
+import streamlit.components.v1 as components
+components.html("""
+<script>
+    (function() {
+        const parentDoc = window.parent.document;
+        
+        function setupHoverListeners() {
+            // Find all waffle selectbox elements in the grid
+            const grids = parentDoc.querySelectorAll('div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox');
+            
+            grids.forEach(grid => {
+                const input = grid.querySelector('input');
+                if (!input) return;
+                
+                // Avoid double-binding event listeners
+                if (grid.dataset.hoverBound) return;
+                grid.dataset.hoverBound = "true";
+                
+                // When mouse enters the cell
+                grid.addEventListener('mouseenter', function() {
+                    const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                    if (!isExpanded) {
+                        // Focus and click the input to trigger dropdown open
+                        input.focus();
+                        input.click();
+                    }
+                });
+                
+                // When mouse leaves the cell
+                grid.addEventListener('mouseleave', function() {
+                    const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                    if (isExpanded) {
+                        // Dispatch Escape key event to close the combobox
+                        const escEvent = new KeyboardEvent('keydown', {
+                            key: 'Escape',
+                            code: 'Escape',
+                            keyCode: 27,
+                            which: 27,
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        input.dispatchEvent(escEvent);
+                        input.blur();
+                    }
+                });
+            });
+        }
+        
+        // Run immediately and also on a slight delay to ensure DOM is fully rendered
+        setupHoverListeners();
+        setTimeout(setupHoverListeners, 300);
+        setTimeout(setupHoverListeners, 1000);
+        
+        // Also listen for scroll events to auto-dismiss open dropdowns
+        parentDoc.addEventListener('scroll', function() {
+            const activeInput = parentDoc.activeElement;
+            if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                const escEvent = new KeyboardEvent('keydown', {
+                    key: 'Escape',
+                    code: 'Escape',
+                    keyCode: 27,
+                    which: 27,
+                    bubbles: true,
+                    cancelable: true
+                });
+                activeInput.dispatchEvent(escEvent);
+                activeInput.blur();
+            }
+        }, true); // Use capture phase to catch all scrolls
+    })();
+</script>
+""", height=0)
