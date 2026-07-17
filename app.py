@@ -283,6 +283,53 @@ st.markdown("""
     section[data-testid="stSidebar"], [data-testid="collapsedControl"] {
         display: none !important;
     }
+    
+    /* Mobile-first responsive styling overrides */
+    @media (max-width: 500px) {
+        /* Scale down the main title */
+        .main-title {
+            font-size: 2.0rem !important;
+        }
+        .subtitle {
+            font-size: 0.8rem !important;
+        }
+        
+        /* Adjust card padding to save screen space */
+        div[data-testid="stVerticalBlockBorderEffect"] {
+            padding: 0.9rem !important;
+            border-radius: 16px !important;
+        }
+        
+        /* Scale down the waffle grid cells to fit mobile viewports */
+        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
+            width: 20px !important;
+            min-width: 20px !important;
+            max-width: 20px !important;
+            flex: 0 0 20px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox {
+            width: 20px !important;
+            height: 20px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 4px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
+            width: 20px !important;
+            height: 18px !important;
+            font-size: 0.85rem !important;
+            line-height: 18px !important;
+        }
+        
+        /* Set grid wrapper bounds for mobile */
+        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
+            max-width: 350px !important;
+            gap: 2.5px !important;
+            margin-bottom: 2.5px !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
