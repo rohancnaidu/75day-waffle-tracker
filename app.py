@@ -305,6 +305,21 @@ st.markdown("""
         margin-bottom: 0.4rem !important;
         font-family: "Space Grotesk", sans-serif !important;
     }
+    .habit-category {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        margin-bottom: 2px !important;
+        display: block !important;
+    }
+    .habit-category.do-category {
+        color: #0f766e !important; /* Teal */
+    }
+    .habit-category.drop-category {
+        color: #be123c !important; /* Rose */
+    }
     .stat-tag {
         font-family: 'Space Grotesk', sans-serif;
         font-size: 0.76rem;
@@ -406,7 +421,11 @@ st.markdown("""
             font-size: 0.78rem !important;
             margin-bottom: 0.3rem !important;
         }
-        
+        /* Scale down habit category labels */
+        .habit-category {
+            font-size: 0.64rem !important;
+            margin-bottom: 1px !important;
+        }
         /* Compact stats tags to fit narrow phone screens side-by-side */
         .stat-tag {
             font-size: 0.68rem !important;
@@ -791,7 +810,13 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
             desc = desc[len(prefix):].strip()
             
     icon = "🟢" if habit_type.lower() == "do" else "🔴"
-    st.markdown(f"<div class='habit-title'>{icon} {desc}</div>", unsafe_allow_html=True)
+    category_label = "Things I'll Do" if habit_type.lower() == "do" else "Things I'll Drop"
+    category_class = "do-category" if habit_type.lower() == "do" else "drop-category"
+    
+    st.markdown(f"""
+    <div class="habit-category {category_class}">{category_label}</div>
+    <div class='habit-title'>{icon} {desc}</div>
+    """, unsafe_allow_html=True)
     
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
