@@ -318,6 +318,33 @@ st.markdown("""
         border-color: rgba(239, 68, 68, 0.12);
     }
     
+    /* Modern minimalist commitment quote box */
+    .mission-quote-box {
+        background-color: rgba(245, 245, 244, 0.65) !important;
+        border-left: 3px solid #0f766e !important; /* Elegant deep teal */
+        padding: 8px 12px !important;
+        border-radius: 4px 8px 8px 4px !important;
+        margin: -0.4rem 0 1rem 0 !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+    }
+    .mission-quote-title {
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        color: #0f766e !important;
+        display: block !important;
+        margin-bottom: 2px !important;
+    }
+    .mission-quote-text {
+        font-size: 0.88rem !important;
+        font-style: italic !important;
+        font-weight: 500 !important;
+        color: #44403c !important;
+        margin: 0 !important;
+        line-height: 1.25 !important;
+    }
+    
     /* Tiny visual day watermark for empty cells */
     .waffle-watermark {
         position: absolute !important;
@@ -458,10 +485,14 @@ def init_mock_data():
 # ----------------- DATA LOADING -----------------
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/edit?usp=sharing"
 CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv"
+MISSIONS_FILE = "missions.csv"
+MISSIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv&gid=718170288"
 
 # Auto-sync from Google Sheets on initial page load / browser refresh
 if "has_synced" not in st.session_state:
     st.session_state["has_synced"] = True
+    
+    # Sync main waffle tracker data
     try:
         df = pd.read_csv(CSV_URL)
         df = clean_dataframe(df)
@@ -474,12 +505,32 @@ if "has_synced" not in st.session_state:
             df = clean_dataframe(df)
         else:
             df = init_mock_data()
+            
+    # Sync missions data
+    try:
+        missions_df = pd.read_csv(MISSIONS_CSV_URL)
+        missions_df.columns = [c.strip() for c in missions_df.columns]
+        missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
+        missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
+        missions_df.to_csv(MISSIONS_FILE, index=False)
+    except Exception as e:
+        if os.path.exists(MISSIONS_FILE):
+            missions_df = pd.read_csv(MISSIONS_FILE)
+        else:
+            missions_df = pd.DataFrame(columns=["Name", "Mission"])
 else:
+    # Read main waffle tracker data
     if os.path.exists(LOCAL_FILE):
         df = pd.read_csv(LOCAL_FILE)
         df = clean_dataframe(df)
     else:
         df = init_mock_data()
+        
+    # Read missions data
+    if os.path.exists(MISSIONS_FILE):
+        missions_df = pd.read_csv(MISSIONS_FILE)
+    else:
+        missions_df = pd.DataFrame(columns=["Name", "Mission"])
 
 # Check if Streamlit GSheets secrets are configured
 def is_gsheets_configured():
@@ -739,7 +790,20 @@ members_list = sorted(df["Member"].unique()) if not df.empty else []
 
 for member in members_list:
     with st.container(border=True):
-        st.markdown(f"<h3 style='margin: 0 0 1rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #1c1917;'>👤 {member}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='margin: 0 0 0.5rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #1c1917;'>👤 {member}</h3>", unsafe_allow_html=True)
+        
+        # Display the commitment mission as an elegant quote box
+        if 'missions_df' in globals() and not missions_df.empty:
+            match = missions_df[missions_df["Name"].str.lower().str.strip() == member.lower().strip()]
+            if not match.empty:
+                mission_text = match.iloc[0]["Mission"]
+                if pd.notna(mission_text) and str(mission_text).strip():
+                    st.markdown(f"""
+                    <div class="mission-quote-box">
+                        <span class="mission-quote-title">🎯 End-of-Challenge Commitment:</span>
+                        <p class="mission-quote-text">“{mission_text}”</p>
+                    </div>
+                    """, unsafe_allow_html=True)
         
         member_rows = df[df["Member"] == member]
         
