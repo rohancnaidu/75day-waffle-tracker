@@ -311,7 +311,7 @@ st.markdown("""
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.05em !important;
-        margin-bottom: 2px !important;
+        margin-bottom: 4px !important;
         display: block !important;
     }
     .habit-category.do-category {
@@ -810,13 +810,7 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
             desc = desc[len(prefix):].strip()
             
     icon = "🟢" if habit_type.lower() == "do" else "🔴"
-    category_label = "Things I'll Do" if habit_type.lower() == "do" else "Things I'll Drop"
-    category_class = "do-category" if habit_type.lower() == "do" else "drop-category"
-    
-    st.markdown(f"""
-    <div class="habit-category {category_class}">{category_label}</div>
-    <div class='habit-title'>{icon} {desc}</div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"<div class='habit-title'>{icon} {desc}</div>", unsafe_allow_html=True)
     
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
@@ -881,6 +875,7 @@ for member in members_list:
         
         with col1:
             st.markdown(f"""
+            <div class="habit-category do-category">Things I'll Do</div>
             <div class="stats-row">
                 <span class="stat-tag success">🟢 {do_done}/75d</span>
                 <span class="stat-tag streak">🔥 Streak: {do_streak}d</span>
@@ -891,6 +886,7 @@ for member in members_list:
             
         with col2:
             st.markdown(f"""
+            <div class="habit-category drop-category">Things I'll Drop</div>
             <div class="stats-row">
                 <span class="stat-tag success">🔴 {drop_done}/75d</span>
                 <span class="stat-tag streak">🔥 Streak: {drop_streak}d</span>
