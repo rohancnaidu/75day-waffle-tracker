@@ -768,6 +768,26 @@ components.html("""
             input.blur();
         }
         
+        // Mobile-friendly outside tap handler to prevent overlapping option bars
+        function handleOutsideTap(e) {
+            const activeInput = parentDoc.activeElement;
+            if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                const clickedSelectbox = e.target.closest('div.stSelectbox');
+                const clickedDropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+                
+                // If they tapped outside the currently active selectbox and its popover dropdown, close it immediately
+                if (!clickedSelectbox || clickedSelectbox.querySelector('input') !== activeInput) {
+                    if (!clickedDropdown) {
+                        closeDropdown(activeInput);
+                    }
+                }
+            }
+        }
+        
+        // Listen to mousedown and touchstart in the capture phase to dismiss old popovers before new ones open
+        parentDoc.addEventListener('mousedown', handleOutsideTap, true);
+        parentDoc.addEventListener('touchstart', handleOutsideTap, true);
+        
         // Track hover state on the dropdown container globally in the parent document
         parentDoc.addEventListener('mouseover', function(e) {
             const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
