@@ -298,12 +298,10 @@ st.markdown("""
         font-weight: 700 !important;
         color: #1c1917 !important;
     }
-    .habit-title {
-        font-size: 0.85rem !important;
-        color: #4b5563 !important;
-        font-weight: 600 !important;
-        margin-bottom: 0.4rem !important;
-        font-family: "Space Grotesk", sans-serif !important;
+    .habit-header-row {
+        font-family: 'Space Grotesk', sans-serif !important;
+        margin-bottom: 0.5rem !important;
+        line-height: 1.3 !important;
     }
     .habit-category {
         font-family: 'Space Grotesk', sans-serif !important;
@@ -311,14 +309,20 @@ st.markdown("""
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.05em !important;
-        margin-bottom: 4px !important;
-        display: block !important;
+        display: inline-block !important;
+        margin-right: 4px !important;
     }
     .habit-category.do-category {
         color: #0f766e !important; /* Teal */
     }
     .habit-category.drop-category {
         color: #be123c !important; /* Rose */
+    }
+    .habit-desc {
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        color: #1c1917 !important; /* Stone charcoal */
+        display: inline-block !important;
     }
     .stat-tag {
         font-family: 'Space Grotesk', sans-serif;
@@ -416,10 +420,12 @@ st.markdown("""
             margin-bottom: 0.35rem !important;
         }
         
-        /* Scale down habit labels */
-        .habit-title {
-            font-size: 0.78rem !important;
-            margin-bottom: 0.3rem !important;
+        /* Scale down habit labels and rows */
+        .habit-desc {
+            font-size: 0.8rem !important;
+        }
+        .habit-header-row {
+            margin-bottom: 0.4rem !important;
         }
         /* Scale down habit category labels */
         .habit-category {
@@ -792,7 +798,7 @@ def compute_stats(rows, habit_type):
     return done_count, failed_count, max_streak
 
 # ----------------- Waffle Grid Rendering -----------------
-def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
+def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_done, stats_failed, stats_streak):
     # Extract the row corresponding to this specific habit type
     habit_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith(habit_type.lower())]
     
@@ -809,8 +815,27 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
         if desc.lower().startswith(prefix):
             desc = desc[len(prefix):].strip()
             
-    icon = "🟢" if habit_type.lower() == "do" else "🔴"
-    st.markdown(f"<div class='habit-title'>{icon} {desc}</div>", unsafe_allow_html=True)
+    # Combine Category Subtitle and Habit Description
+    category_label = "Things I'll Do:" if habit_type.lower() == "do" else "Things I'll Drop:"
+    category_class = "do-category" if habit_type.lower() == "do" else "drop-category"
+    
+    st.markdown(f"""
+    <div class="habit-header-row">
+        <span class="habit-category {category_class}">{category_label}</span>
+        <span class="habit-desc">{desc}</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Render Stats Row below the header
+    bullet = "🟢" if habit_type.lower() == "do" else "🔴"
+    tag_style = "success" if habit_type.lower() == "do" else "danger"
+    st.markdown(f"""
+    <div class="stats-row">
+        <span class="stat-tag {tag_style}">{bullet} {stats_done}/75d</span>
+        <span class="stat-tag streak">🔥 Streak: {stats_streak}d</span>
+        <span class="stat-tag danger">❌ Failed: {stats_failed}</span>
+    </div>
+    """, unsafe_allow_html=True)
     
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
@@ -874,26 +899,10 @@ for member in members_list:
         col1, col2 = st.columns(2, gap="large")
         
         with col1:
-            st.markdown(f"""
-            <div class="habit-category do-category">Things I'll Do</div>
-            <div class="stats-row">
-                <span class="stat-tag success">🟢 {do_done}/75d</span>
-                <span class="stat-tag streak">🔥 Streak: {do_streak}d</span>
-                <span class="stat-tag danger">❌ Failed: {do_failed}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            render_waffle(member, member_rows, "Do", "Daily DO", "do")
+            render_waffle(member, member_rows, "Do", "Daily DO", "do", do_done, do_failed, do_streak)
             
         with col2:
-            st.markdown(f"""
-            <div class="habit-category drop-category">Things I'll Drop</div>
-            <div class="stats-row">
-                <span class="stat-tag success">🔴 {drop_done}/75d</span>
-                <span class="stat-tag streak">🔥 Streak: {drop_streak}d</span>
-                <span class="stat-tag danger">❌ Failed: {drop_failed}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            render_waffle(member, member_rows, "Drop", "Daily DROP", "drop")
+            render_waffle(member, member_rows, "Drop", "Daily DROP", "drop", drop_done, drop_failed, drop_streak)
         
     st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
