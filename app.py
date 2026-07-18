@@ -800,7 +800,6 @@ for member in members_list:
                 if pd.notna(mission_text) and str(mission_text).strip():
                     st.markdown(f"""
                     <div class="mission-quote-box">
-                        <span class="mission-quote-title">🎯 End-of-Challenge Commitment:</span>
                         <p class="mission-quote-text">“{mission_text}”</p>
                     </div>
                     """, unsafe_allow_html=True)
