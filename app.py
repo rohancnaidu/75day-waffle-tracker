@@ -291,6 +291,20 @@ st.markdown("""
         gap: 6px;
         margin-bottom: 0.8rem;
     }
+    .member-header {
+        margin: 0 0 0.5rem 0 !important;
+        font-family: "Space Grotesk", sans-serif !important;
+        font-size: 1.35rem !important;
+        font-weight: 700 !important;
+        color: #1c1917 !important;
+    }
+    .habit-title {
+        font-size: 0.85rem !important;
+        color: #4b5563 !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.4rem !important;
+        font-family: "Space Grotesk", sans-serif !important;
+    }
     .stat-tag {
         font-family: 'Space Grotesk', sans-serif;
         font-size: 0.76rem;
@@ -373,12 +387,40 @@ st.markdown("""
             bottom: 1px !important;
             right: 2px !important;
         }
-        /* Scale down the main title */
+        /* Scale down the main title and subtitle */
         .main-title {
-            font-size: 2.0rem !important;
+            font-size: 1.8rem !important;
         }
         .subtitle {
+            font-size: 0.8rem !important;
+        }
+        
+        /* Scale down member header */
+        .member-header {
+            font-size: 1.15rem !important;
+            margin-bottom: 0.35rem !important;
+        }
+        
+        /* Scale down habit labels */
+        .habit-title {
             font-size: 0.78rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+        
+        /* Compact stats tags to fit narrow phone screens side-by-side */
+        .stat-tag {
+            font-size: 0.68rem !important;
+            padding: 2px 6px !important;
+            border-radius: 5px !important;
+        }
+        
+        /* Tighten commitment quote box space */
+        .mission-quote-box {
+            padding: 6px 10px !important;
+            margin-bottom: 0.8rem !important;
+        }
+        .mission-quote-text {
+            font-size: 0.8rem !important;
         }
         
         /* Adjust card padding to save screen space */
@@ -749,7 +791,7 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix):
             desc = desc[len(prefix):].strip()
             
     icon = "🟢" if habit_type.lower() == "do" else "🔴"
-    st.markdown(f"<div style='font-size: 0.85rem; color: #4b5563; font-weight: 600; margin-bottom: 0.4rem; font-family: \"Space Grotesk\", sans-serif;'>{icon} {desc}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='habit-title'>{icon} {desc}</div>", unsafe_allow_html=True)
     
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
@@ -790,7 +832,7 @@ members_list = sorted(df["Member"].unique()) if not df.empty else []
 
 for member in members_list:
     with st.container(border=True):
-        st.markdown(f"<h3 style='margin: 0 0 0.5rem 0; font-family: \"Space Grotesk\", sans-serif; font-size: 1.4rem; font-weight: 700; color: #1c1917;'>👤 {member}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 class='member-header'>👤 {member}</h3>", unsafe_allow_html=True)
         
         # Display the commitment mission as an elegant quote box
         if 'missions_df' in globals() and not missions_df.empty:
