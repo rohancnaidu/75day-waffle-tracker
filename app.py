@@ -318,8 +318,34 @@ st.markdown("""
         border-color: rgba(239, 68, 68, 0.12);
     }
     
+    /* Tiny visual day watermark for empty cells */
+    .waffle-watermark {
+        position: absolute !important;
+        font-size: 8px !important;
+        font-weight: 600 !important;
+        color: rgba(0, 0, 0, 0.22) !important;
+        pointer-events: none !important;
+        bottom: 2px !important;
+        right: 3px !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        transition: opacity 0.2s ease !important;
+        z-index: 10 !important;
+    }
+    
+    /* Hide watermark when cell is checked */
+    div[role="group"]:has(input[value="✅"]) .waffle-watermark,
+    div[role="group"]:has(input[value="❌"]) .waffle-watermark {
+        opacity: 0 !important;
+    }
+    
     /* Mobile-first responsive styling overrides */
     @media (max-width: 500px) {
+        /* Mobile cell watermark adjustments */
+        .waffle-watermark {
+            font-size: 6.5px !important;
+            bottom: 1px !important;
+            right: 2px !important;
+        }
         /* Scale down the main title */
         .main-title {
             font-size: 2.0rem !important;
@@ -822,9 +848,28 @@ components.html("""
                 const input = grid.querySelector('input');
                 if (!input) return;
                 
+                // Read aria-label to get day number (e.g., "D15")
+                const ariaLabel = input.getAttribute('aria-label') || "";
+                const dayNum = ariaLabel.replace('D', '');
+                
+                if (dayNum) {
+                    input.title = "Day " + dayNum;
+                }
+                
                 // Avoid double-binding event listeners
                 if (grid.dataset.hoverBound) return;
                 grid.dataset.hoverBound = "true";
+                
+                // Add tiny visual day watermark inside the cell
+                if (dayNum) {
+                    const group = grid.querySelector('div[role="group"]');
+                    if (group) {
+                        const watermark = parentDoc.createElement('span');
+                        watermark.className = 'waffle-watermark';
+                        watermark.innerText = dayNum;
+                        group.appendChild(watermark);
+                    }
+                }
                 
                 // When mouse enters the cell
                 grid.addEventListener('mouseenter', function() {
