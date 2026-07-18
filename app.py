@@ -610,9 +610,11 @@ def is_gsheets_configured():
 
 # ----------------- MAIN PAGE HEADER -----------------
 st.markdown("""
-<div class="title-container" style="padding: 1rem 0 0.5rem 0; margin-bottom: 1rem;">
-    <h1 class="main-title" style="font-size: 2.2rem;">🔥 75-Day Challenge</h1>
-    <div class="subtitle" style="font-size: 0.95rem; margin-top: 0.2rem;">Waffle Habit Tracker & Streak Dashboard</div>
+<div class="title-container" style="padding: 1rem 0 0.5rem 0; margin-bottom: 1.5rem; text-align: center;">
+    <h1 class="main-title" style="font-size: 2.2rem; margin-bottom: 0.4rem;">🔥 75-Day Challenge</h1>
+    <div class="subtitle" style="font-size: 0.88rem; font-style: italic; color: #57534e; line-height: 1.45; max-width: 700px; margin: 0 auto;">
+        “Success is the product of daily habits—not once-in-a-lifetime transformations... If you can get 1 percent better each day for one year, you’ll end up thirty-seven times better by the time you’re done.”
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
