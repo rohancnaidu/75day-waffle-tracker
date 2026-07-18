@@ -751,6 +751,48 @@ components.html("""
 <script>
     (function() {
         const parentDoc = window.parent.document;
+        let isHoveringDropdown = false;
+        
+        // Helper function to close dropdown cleanly
+        function closeDropdown(input) {
+            if (!input) return;
+            const escEvent = new KeyboardEvent('keydown', {
+                key: 'Escape',
+                code: 'Escape',
+                keyCode: 27,
+                which: 27,
+                bubbles: true,
+                cancelable: true
+            });
+            input.dispatchEvent(escEvent);
+            input.blur();
+        }
+        
+        // Track hover state on the dropdown container globally in the parent document
+        parentDoc.addEventListener('mouseover', function(e) {
+            const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+            if (dropdown) {
+                isHoveringDropdown = true;
+            }
+        }, true);
+        
+        parentDoc.addEventListener('mouseout', function(e) {
+            const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+            if (dropdown) {
+                if (!e.relatedTarget || !dropdown.contains(e.relatedTarget)) {
+                    isHoveringDropdown = false;
+                    // If mouse left the dropdown, close the active input after a short delay
+                    setTimeout(() => {
+                        const activeInput = parentDoc.activeElement;
+                        if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                            if (!isHoveringDropdown) {
+                                closeDropdown(activeInput);
+                            }
+                        }
+                    }, 150);
+                }
+            }
+        }, true);
         
         function setupHoverListeners() {
             // Find all waffle selectbox elements in the grid
@@ -776,25 +818,20 @@ components.html("""
                 
                 // When mouse leaves the cell
                 grid.addEventListener('mouseleave', function() {
-                    const isExpanded = input.getAttribute('aria-expanded') === 'true';
-                    if (isExpanded) {
-                        // Dispatch Escape key event to close the combobox
-                        const escEvent = new KeyboardEvent('keydown', {
-                            key: 'Escape',
-                            code: 'Escape',
-                            keyCode: 27,
-                            which: 27,
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        input.dispatchEvent(escEvent);
-                        input.blur();
-                    }
+                    // Wait a short grace period to allow the mouse to transition to the dropdown popover
+                    setTimeout(() => {
+                        if (isHoveringDropdown) return; // Keep open if mouse is now on the dropdown options
+                        
+                        const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                        if (isExpanded) {
+                            closeDropdown(input);
+                        }
+                    }, 150);
                 });
             });
         }
         
-        // Run immediately and also on a slight delay to ensure DOM is fully rendered
+        // Run immediately and on a delay to capture rendering
         setupHoverListeners();
         setTimeout(setupHoverListeners, 300);
         setTimeout(setupHoverListeners, 1000);
@@ -803,16 +840,7 @@ components.html("""
         parentDoc.addEventListener('scroll', function() {
             const activeInput = parentDoc.activeElement;
             if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
-                const escEvent = new KeyboardEvent('keydown', {
-                    key: 'Escape',
-                    code: 'Escape',
-                    keyCode: 27,
-                    which: 27,
-                    bubbles: true,
-                    cancelable: true
-                });
-                activeInput.dispatchEvent(escEvent);
-                activeInput.blur();
+                closeDropdown(activeInput);
             }
         }, true); // Use capture phase to catch all scrolls
     })();
