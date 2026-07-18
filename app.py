@@ -808,6 +808,12 @@ components.html("""
                 
                 // When mouse enters the cell
                 grid.addEventListener('mouseenter', function() {
+                    // Immediately close any other open dropdown before opening this one
+                    const activeInput = parentDoc.activeElement;
+                    if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true' && activeInput !== input) {
+                        closeDropdown(activeInput);
+                    }
+                    
                     const isExpanded = input.getAttribute('aria-expanded') === 'true';
                     if (!isExpanded) {
                         // Focus and click the input to trigger dropdown open
