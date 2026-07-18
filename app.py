@@ -487,6 +487,34 @@ if "gscript_url" not in st.session_state:
         st.session_state["gscript_url"] = ""
 
 # ----------------- AUTO-SAVE SYNCHRONIZATION -----------------
+import threading
+
+def run_cloud_sync_in_background(df_to_save, gscript_url):
+    try:
+        if gscript_url:
+            import requests
+            import json
+            payload = {
+                "headers": df_to_save.columns.tolist(),
+                "rows": df_to_save.values.tolist()
+            }
+            requests.post(
+                gscript_url,
+                data=json.dumps(payload),
+                headers={"Content-Type": "application/json"},
+                timeout=25
+            )
+        elif is_gsheets_configured():
+            from streamlit_gsheets import GSheetsConnection
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.update(
+                spreadsheet=SHEET_URL,
+                data=df_to_save
+            )
+    except Exception as e:
+        import logging
+        logging.error(f"Background cloud sync failed: {e}")
+
 def save_and_sync():
     try:
         # Load the latest local copy to update
@@ -507,47 +535,20 @@ def save_and_sync():
                             df_to_update.at[idx, f"Day {day_num}"] = reverse_map.get(val, "")
         
         df_to_update.to_csv(LOCAL_FILE, index=False)
+        st.toast("Progress saved locally & syncing to cloud...", icon="💾")
         
-        # Attempt to write back to Google Sheets
+        # Dispatch cloud sync to background thread to prevent UI freezing
         gscript_url = st.session_state.get("gscript_url", "").strip()
+        df_to_save = df_to_update.rename(columns={"Member": "Name"}).fillna("")
         
-        if gscript_url:
-            try:
-                import requests
-                import json
-                df_to_save = df_to_update.rename(columns={"Member": "Name"})
-                df_to_save = df_to_save.fillna("")
-                payload = {
-                    "headers": df_to_save.columns.tolist(),
-                    "rows": df_to_save.values.tolist()
-                }
-                res = requests.post(
-                    gscript_url,
-                    data=json.dumps(payload),
-                    headers={"Content-Type": "application/json"},
-                    timeout=15
-                )
-                if res.status_code == 200:
-                    st.toast("Progress auto-saved and synced to Google Sheets!", icon="💾")
-                else:
-                    st.toast(f"Auto-saved locally (Cloud sync HTTP error: {res.status_code})", icon="⚠️")
-            except Exception as g_err:
-                st.toast(f"Auto-saved locally (Cloud sync connection failed: {g_err})", icon="⚠️")
-        elif is_gsheets_configured():
-            try:
-                from streamlit_gsheets import GSheetsConnection
-                conn = st.connection("gsheets", type=GSheetsConnection)
-                df_to_save = df_to_update.rename(columns={"Member": "Name"})
-                df_to_save = df_to_save.fillna("")
-                conn.update(
-                    spreadsheet=SHEET_URL,
-                    data=df_to_save
-                )
-                st.toast("Progress auto-saved and synced to Google Sheets!", icon="💾")
-            except Exception as g_err:
-                st.toast(f"Auto-saved locally (Cloud sync failed: {g_err})", icon="⚠️")
-        else:
-            st.toast("Progress auto-saved locally!", icon="💾")
+        if gscript_url or is_gsheets_configured():
+            thread = threading.Thread(
+                target=run_cloud_sync_in_background,
+                args=(df_to_save, gscript_url)
+            )
+            thread.daemon = True
+            thread.start()
+            
     except Exception as e:
         st.error(f"Failed to auto-save: {e}")
 
