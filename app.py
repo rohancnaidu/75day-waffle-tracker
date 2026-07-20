@@ -5,7 +5,7 @@ import os
 
 # ----------------- PAGE CONFIG & STYLING -----------------
 st.set_page_config(
-    page_title="75-Day Waffle Tracker",
+    page_title="75-Day Transformation | Phase 3, 2026",
     page_icon="🔥",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -734,10 +734,11 @@ def is_gsheets_configured():
 # ----------------- MAIN PAGE HEADER -----------------
 st.markdown("""
 <div class="title-container" style="padding: 1rem 0 0.5rem 0; margin-bottom: 1.5rem; text-align: center;">
-    <h1 class="main-title" style="font-size: 2.2rem; margin-bottom: 0.4rem;">🔥 75-Day Challenge</h1>
-    <div class="subtitle" style="font-size: 0.88rem; font-style: italic; color: #57534e; line-height: 1.45; max-width: 700px; margin: 0 auto;">
-        “Success is the product of daily habits—not once-in-a-lifetime transformations... If you can get 1 percent better each day for one year, you’ll end up thirty-seven times better by the time you’re done.”
-    </div>
+    <h1 class="main-title" style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔥 75-Day Transformation | Phase 3, 2026</h1>
+    <div class="subtitle" style="font-size: 0.88rem; color: #57534e; line-height: 1.5; max-width: 750px; margin: 0 auto;">
+        <span style="font-style: italic; display: block; margin-bottom: 0.35rem;">“Success is the product of daily habits—not once-in-a-lifetime transformations... If you can get 1 percent better each day for one year, you’ll end up thirty-seven times better by the time you’re done.”</span>
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #78716c; font-family: 'Space Grotesk', sans-serif;">— James Clear, Atomic Habits</span>
+     </div>
 </div>
 """, unsafe_allow_html=True)
 
