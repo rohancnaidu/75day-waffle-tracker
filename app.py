@@ -829,58 +829,59 @@ with st.container(border=True):
         else:
             st.markdown("<div style='font-size: 0.85rem; color: #f59e0b; padding-top: 0.65rem;'>📂 Auto-save active (Local Mode - configure cloud settings below to sync)</div>", unsafe_allow_html=True)
 
-# Google Sheet Cloud Settings Expander
-with st.expander("⚙️ Google Sheet Cloud Sync Settings"):
-    gscript_input = st.text_input(
-        "Google Apps Script Web App URL",
-        value=st.session_state.get("gscript_url", ""),
-        placeholder="https://script.google.com/macros/s/.../exec",
-        help="Paste the deployed Apps Script URL here to enable automatic write-backs to Google Sheets."
-    )
-    if gscript_input != st.session_state.get("gscript_url", ""):
-        st.session_state["gscript_url"] = gscript_input
-        try:
-            with open(GSCRIPT_FILE, "w") as f:
-                f.write(gscript_input)
-        except Exception as file_err:
-            st.error(f"Failed to save settings file: {file_err}")
-        st.toast("Google Sheets Web App URL updated!", icon="🔗")
-        st.rerun()
-        
-    st.markdown("""
-    ### How to set up zero-config cloud sync:
-    1. Open your [Google Sheet](https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/edit?usp=sharing).
-    2. Click **Extensions > Apps Script** in the top menu.
-    3. Delete any boilerplate code and paste the following Google Apps Script:
-    ```javascript
-    function doPost(e) {
-      try {
-        var data = JSON.parse(e.postData.contents);
-        var ss = SpreadsheetApp.getActiveSpreadsheet();
-        var sheet = ss.getSheets()[0]; // Targets the first sheet
-        
-        sheet.clearContents();
-        sheet.getRange(1, 1, 1, data.headers.length).setValues([data.headers]);
-        if (data.rows && data.rows.length > 0) {
-          sheet.getRange(2, 1, data.rows.length, data.headers.length).setValues(data.rows);
+# Google Sheet Cloud Settings Expander (hidden by default, accessible via URL parameter ?admin=true)
+if st.query_params.get("admin", "false").lower() == "true":
+    with st.expander("⚙️ Google Sheet Cloud Sync Settings"):
+        gscript_input = st.text_input(
+            "Google Apps Script Web App URL",
+            value=st.session_state.get("gscript_url", ""),
+            placeholder="https://script.google.com/macros/s/.../exec",
+            help="Paste the deployed Apps Script URL here to enable automatic write-backs to Google Sheets."
+        )
+        if gscript_input != st.session_state.get("gscript_url", ""):
+            st.session_state["gscript_url"] = gscript_input
+            try:
+                with open(GSCRIPT_FILE, "w") as f:
+                    f.write(gscript_input)
+            except Exception as file_err:
+                st.error(f"Failed to save settings file: {file_err}")
+            st.toast("Google Sheets Web App URL updated!", icon="🔗")
+            st.rerun()
+            
+        st.markdown("""
+        ### How to set up zero-config cloud sync:
+        1. Open your [Google Sheet](https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/edit?usp=sharing).
+        2. Click **Extensions > Apps Script** in the top menu.
+        3. Delete any boilerplate code and paste the following Google Apps Script:
+        ```javascript
+        function doPost(e) {
+          try {
+            var data = JSON.parse(e.postData.contents);
+            var ss = SpreadsheetApp.getActiveSpreadsheet();
+            var sheet = ss.getSheets()[0]; // Targets the first sheet
+            
+            sheet.clearContents();
+            sheet.getRange(1, 1, 1, data.headers.length).setValues([data.headers]);
+            if (data.rows && data.rows.length > 0) {
+              sheet.getRange(2, 1, data.rows.length, data.headers.length).setValues(data.rows);
+            }
+            return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+              .setMimeType(ContentService.MimeType.JSON);
+          } catch (err) {
+            return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()}))
+              .setMimeType(ContentService.MimeType.JSON);
+          }
         }
-        return ContentService.createTextOutput(JSON.stringify({status: "success"}))
-          .setMimeType(ContentService.MimeType.JSON);
-      } catch (err) {
-        return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()}))
-          .setMimeType(ContentService.MimeType.JSON);
-      }
-    }
-    ```
-    4. Click the **Save** icon (disk icon).
-    5. Click **Deploy > New deployment** in the top-right.
-    6. Click the gear icon next to "Select type" and select **Web app**.
-    7. Configure:
-       - **Execute as:** `Me (your email)`
-       - **Who has access:** `Anyone`
-    8. Click **Deploy** and authorize permissions (click *Advanced* and *Go to Untitled project (unsafe)* if prompted).
-    9. Copy the **Web app URL** and paste it in the box above!
-    """, unsafe_allow_html=True)
+        ```
+        4. Click the **Save** icon (disk icon).
+        5. Click **Deploy > New deployment** in the top-right.
+        6. Click the gear icon next to "Select type" and select **Web app**.
+        7. Configure:
+           - **Execute as:** `Me (your email)`
+           - **Who has access:** `Anyone`
+        8. Click **Deploy** and authorize permissions (click *Advanced* and *Go to Untitled project (unsafe)* if prompted).
+        9. Copy the **Web app URL** and paste it in the box above!
+        """, unsafe_allow_html=True)
 
 st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
 
