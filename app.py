@@ -478,6 +478,22 @@ st.markdown("""
         border-radius: 6px !important;
     }
     
+    .leaderboard-streak-badge.completed-badge {
+        color: #0f766e !important; /* Teal */
+        background-color: rgba(15, 118, 110, 0.08) !important;
+    }
+    .leaderboard-streak-badge.drop-completed-badge {
+        color: #be123c !important; /* Rose */
+        background-color: rgba(190, 18, 60, 0.08) !important;
+    }
+    .leaderboard-streak-badge.total-completed-badge {
+        color: #4f46e5 !important; /* Indigo */
+        background-color: rgba(79, 70, 229, 0.08) !important;
+    }
+    .leaderboard-title.total-title {
+        color: #4f46e5 !important;
+    }
+    
     /* Mobile-first responsive styling overrides */
     @media (max-width: 500px) {
         /* Mobile cell watermark adjustments */
@@ -1024,6 +1040,9 @@ with tab_leaderboard:
     # Gather leaderboard data
     leaderboard_do = []
     leaderboard_drop = []
+    leaderboard_do_days = []
+    leaderboard_drop_days = []
+    leaderboard_total_days = []
 
     if not df.empty:
         members_list = df["Member"].unique()
@@ -1031,9 +1050,9 @@ with tab_leaderboard:
             member_rows = df[df["Member"] == m]
             
             # Do stats
-            _, _, do_streak = compute_stats(member_rows, "Do")
+            do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
             # Drop stats
-            _, _, drop_streak = compute_stats(member_rows, "Drop")
+            drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
             
             # Parse DO description
             do_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("do")]
@@ -1053,86 +1072,206 @@ with tab_leaderboard:
                     if drop_desc.lower().startswith(prefix):
                         drop_desc = drop_desc[len(prefix):].strip()
             
+            # Streaks data
             leaderboard_do.append({"Member": m, "Streak": do_streak, "Habit": do_desc})
             leaderboard_drop.append({"Member": m, "Streak": drop_streak, "Habit": drop_desc})
+            
+            # Completed days data
+            leaderboard_do_days.append({"Member": m, "Days": do_done, "Habit": do_desc})
+            leaderboard_drop_days.append({"Member": m, "Days": drop_done, "Habit": drop_desc})
+            leaderboard_total_days.append({"Member": m, "Days": do_done + drop_done, "Habit": f"{do_desc} & {drop_desc}"})
 
-    # Sort in descending order of streak length
+    # Sort streaks descending
     leaderboard_do = sorted(leaderboard_do, key=lambda x: x["Streak"], reverse=True)
     leaderboard_drop = sorted(leaderboard_drop, key=lambda x: x["Streak"], reverse=True)
     
-    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+    # Sort completed days descending
+    leaderboard_do_days = sorted(leaderboard_do_days, key=lambda x: x["Days"], reverse=True)
+    leaderboard_drop_days = sorted(leaderboard_drop_days, key=lambda x: x["Days"], reverse=True)
+    leaderboard_total_days = sorted(leaderboard_total_days, key=lambda x: x["Days"], reverse=True)
     
-    col_lead_do, col_lead_drop = st.columns(2, gap="large")
+    # Set up sub-tabs under main Leaderboard tab
+    sub_tab_streaks, sub_tab_total = st.tabs(["🔥 Longest Streaks", "📈 Days Completed Rankings"])
     
-    with col_lead_do:
-        st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
-        st.markdown('<div class="leaderboard-title do-title">🏆 Things I\'ll Do Leaderboard</div>', unsafe_allow_html=True)
+    with sub_tab_streaks:
+        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+        col_lead_do, col_lead_drop = st.columns(2, gap="large")
         
-        if not leaderboard_do:
-            st.write("No data available.")
-        else:
-            for rank, item in enumerate(leaderboard_do, 1):
-                if rank == 1:
-                    badge = "🥇"
-                    rank_class = "rank-1"
-                elif rank == 2:
-                    badge = "🥈"
-                    rank_class = "rank-2"
-                elif rank == 3:
-                    badge = "🥉"
-                    rank_class = "rank-3"
-                else:
-                    badge = f"{rank}."
-                    rank_class = ""
-                
-                st.markdown(f"""
-                <div class="leaderboard-item {rank_class}">
-                    <div class="leaderboard-name-section">
-                        <span class="leaderboard-rank-badge">{badge}</span>
-                        <div>
-                            <span class="leaderboard-member-name">{item['Member']}</span>
-                            <span class="leaderboard-habit-desc">{item['Habit']}</span>
+        with col_lead_do:
+            st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title do-title">🏆 Things I\'ll Do Streaks</div>', unsafe_allow_html=True)
+            
+            if not leaderboard_do:
+                st.write("No data available.")
+            else:
+                for rank, item in enumerate(leaderboard_do, 1):
+                    if rank == 1:
+                        badge = "🥇"
+                        rank_class = "rank-1"
+                    elif rank == 2:
+                        badge = "🥈"
+                        rank_class = "rank-2"
+                    elif rank == 3:
+                        badge = "🥉"
+                        rank_class = "rank-3"
+                    else:
+                        badge = f"{rank}."
+                        rank_class = ""
+                    
+                    st.markdown(f"""
+                    <div class="leaderboard-item {rank_class}">
+                        <div class="leaderboard-name-section">
+                            <span class="leaderboard-rank-badge">{badge}</span>
+                            <div>
+                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                            </div>
                         </div>
+                        <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
                     </div>
-                    <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
-                </div>
-                """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_lead_drop:
-        st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
-        st.markdown('<div class="leaderboard-title drop-title">🏆 Things I\'ll Drop Leaderboard</div>', unsafe_allow_html=True)
-        
-        if not leaderboard_drop:
-            st.write("No data available.")
-        else:
-            for rank, item in enumerate(leaderboard_drop, 1):
-                if rank == 1:
-                    badge = "🥇"
-                    rank_class = "rank-1"
-                elif rank == 2:
-                    badge = "🥈"
-                    rank_class = "rank-2"
-                elif rank == 3:
-                    badge = "🥉"
-                    rank_class = "rank-3"
-                else:
-                    badge = f"{rank}."
-                    rank_class = ""
-                
-                st.markdown(f"""
-                <div class="leaderboard-item {rank_class}">
-                    <div class="leaderboard-name-section">
-                        <span class="leaderboard-rank-badge">{badge}</span>
-                        <div>
-                            <span class="leaderboard-member-name">{item['Member']}</span>
-                            <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                    """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with col_lead_drop:
+            st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title drop-title">🏆 Things I\'ll Drop Streaks</div>', unsafe_allow_html=True)
+            
+            if not leaderboard_drop:
+                st.write("No data available.")
+            else:
+                for rank, item in enumerate(leaderboard_drop, 1):
+                    if rank == 1:
+                        badge = "🥇"
+                        rank_class = "rank-1"
+                    elif rank == 2:
+                        badge = "🥈"
+                        rank_class = "rank-2"
+                    elif rank == 3:
+                        badge = "🥉"
+                        rank_class = "rank-3"
+                    else:
+                        badge = f"{rank}."
+                        rank_class = ""
+                    
+                    st.markdown(f"""
+                    <div class="leaderboard-item {rank_class}">
+                        <div class="leaderboard-name-section">
+                            <span class="leaderboard-rank-badge">{badge}</span>
+                            <div>
+                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                            </div>
                         </div>
+                        <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
                     </div>
-                    <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
-                </div>
-                """, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    with sub_tab_total:
+        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+        col_c_do, col_c_drop, col_c_total = st.columns(3, gap="medium")
+        
+        with col_c_do:
+            st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title do-title">🏆 Most Do\'s Completed</div>', unsafe_allow_html=True)
+            if not leaderboard_do_days:
+                st.write("No data available.")
+            else:
+                for rank, item in enumerate(leaderboard_do_days, 1):
+                    if rank == 1:
+                        badge = "🥇"
+                        rank_class = "rank-1"
+                    elif rank == 2:
+                        badge = "🥈"
+                        rank_class = "rank-2"
+                    elif rank == 3:
+                        badge = "🥉"
+                        rank_class = "rank-3"
+                    else:
+                        badge = f"{rank}."
+                        rank_class = ""
+                    
+                    st.markdown(f"""
+                    <div class="leaderboard-item {rank_class}">
+                        <div class="leaderboard-name-section">
+                            <span class="leaderboard-rank-badge">{badge}</span>
+                            <div>
+                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                            </div>
+                        </div>
+                        <span class="leaderboard-streak-badge completed-badge">🟢 {item['Days']}/75d</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with col_c_drop:
+            st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title drop-title">🏆 Most Drop\'s Completed</div>', unsafe_allow_html=True)
+            if not leaderboard_drop_days:
+                st.write("No data available.")
+            else:
+                for rank, item in enumerate(leaderboard_drop_days, 1):
+                    if rank == 1:
+                        badge = "🥇"
+                        rank_class = "rank-1"
+                    elif rank == 2:
+                        badge = "🥈"
+                        rank_class = "rank-2"
+                    elif rank == 3:
+                        badge = "🥉"
+                        rank_class = "rank-3"
+                    else:
+                        badge = f"{rank}."
+                        rank_class = ""
+                    
+                    st.markdown(f"""
+                    <div class="leaderboard-item {rank_class}">
+                        <div class="leaderboard-name-section">
+                            <span class="leaderboard-rank-badge">{badge}</span>
+                            <div>
+                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                            </div>
+                        </div>
+                        <span class="leaderboard-streak-badge drop-completed-badge">🔴 {item['Days']}/75d</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with col_c_total:
+            st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title total-title">🏆 Most Days Total Done</div>', unsafe_allow_html=True)
+            if not leaderboard_total_days:
+                st.write("No data available.")
+            else:
+                for rank, item in enumerate(leaderboard_total_days, 1):
+                    if rank == 1:
+                        badge = "🥇"
+                        rank_class = "rank-1"
+                    elif rank == 2:
+                        badge = "🥈"
+                        rank_class = "rank-2"
+                    elif rank == 3:
+                        badge = "🥉"
+                        rank_class = "rank-3"
+                    else:
+                        badge = f"{rank}."
+                        rank_class = ""
+                    
+                    st.markdown(f"""
+                    <div class="leaderboard-item {rank_class}">
+                        <div class="leaderboard-name-section">
+                            <span class="leaderboard-rank-badge">{badge}</span>
+                            <div>
+                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-habit-desc">Total Completed Days</span>
+                            </div>
+                        </div>
+                        <span class="leaderboard-streak-badge total-completed-badge">⚡ {item['Days']}/150d</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- HOVER INTERACTIONS JS INJECTION -----------------
 import streamlit.components.v1 as components
