@@ -408,6 +408,43 @@ st.markdown("""
     div[role="group"]:has(input[value="❌"]) .waffle-watermark {
         opacity: 0 !important;
     }
+    /* Notion Page Link Index Styling */
+    .notion-index-container {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        justify-content: center !important;
+        margin: -0.5rem auto 1.5rem auto !important;
+        padding: 6px !important;
+        max-width: 900px !important;
+    }
+    .notion-link {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 5px 12px !important;
+        background-color: rgba(55, 53, 47, 0.04) !important;
+        border-radius: 6px !important;
+        text-decoration: none !important;
+        color: #37352f !important; /* Notion default dark text */
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease !important;
+        border: 1px solid rgba(55, 53, 47, 0.08) !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    }
+    .notion-link:hover {
+        background-color: rgba(55, 53, 47, 0.08) !important;
+        border-color: rgba(55, 53, 47, 0.16) !important;
+        text-decoration: none !important;
+        transform: translateY(-1px) !important;
+    }
+    .notion-icon {
+        font-size: 1.05rem !important;
+        display: inline-block !important;
+    }
+    
     /* Leaderboard Tab Styling */
     .leaderboard-container {
         background-color: rgba(255, 255, 255, 0.45) !important;
@@ -622,6 +659,19 @@ st.markdown("""
         .leaderboard-streak-badge {
             font-size: 0.72rem !important;
             padding: 2px 6px !important;
+        
+        /* Notion Index Mobile Overrides */
+        .notion-index-container {
+            gap: 6px !important;
+            margin-bottom: 1.2rem !important;
+            padding: 4px !important;
+        }
+        .notion-link {
+            padding: 4px 10px !important;
+            font-size: 0.78rem !important;
+        }
+        .notion-icon {
+            font-size: 0.95rem !important;
         }
     }
 </style>
@@ -754,7 +804,7 @@ st.markdown("""
     <h1 class="main-title" style="font-size: 2.2rem; margin-bottom: 0.2rem;">🔥 75-Day Transformation</h1>
     <div class="phase-tag">Phase 3, 2026</div>
     <div class="subtitle" style="font-size: 0.88rem; color: #57534e; line-height: 1.5; max-width: 750px; margin: 0 auto;">
-        <span style="font-style: italic; display: block; margin-bottom: 0.35rem;">“Success is the product of daily habits—not once-in-a-lifetime transformations... If you can get 1 percent better each day for one year, you’ll end up thirty-seven times better by the time you’re done.”</span>
+        <span style="font-style: italic; display: block; margin-bottom: 0.35rem;">“Success is the product of daily habits—not once-in-a-lifetime transformations... If you can get 1% better each day for one year, you’ll end up 37 times better by the time you’re done.”</span>
         <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #78716c; font-family: 'Space Grotesk', sans-serif;">— James Clear, Atomic Habits</span>
      </div>
 </div>
@@ -920,6 +970,19 @@ if st.query_params.get("admin", "false").lower() == "true":
 
 st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
 
+def get_member_avatar(member_name):
+    avatars = {
+        "divya": "👩‍💻",
+        "rohan": "🧑‍🚀",
+        "harshit": "🧙‍♂️",
+        "rashmi": "🦸‍♀️",
+        "ullas": "🥷",
+        "rohit": "🏃‍♂️",
+        "sarah": "🏃‍♀️",
+        "alex": "🧗‍♂️"
+    }
+    return avatars.get(member_name.lower().strip(), "👤")
+
 # ----------------- METRICS DASHBOARD -----------------
 def compute_stats(rows, habit_type):
     habit_row = rows[rows["HabitType"].str.lower().str.startswith(habit_type.lower())]
@@ -1020,12 +1083,26 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
 tab_tracker, tab_leaderboard = st.tabs(["📊 Tracker Dashboard", "🏆 Leaderboard"])
 
 with tab_tracker:
-    # Display each participant's grids inside modern glass containers
+    # Display Notion-style quick navigation index with caricature avatars
     members_list = sorted(df["Member"].unique()) if not df.empty else []
-    
+    if members_list:
+        index_html = '<div class="notion-index-container">'
+        for member in members_list:
+            avatar = get_member_avatar(member)
+            target_id = member.lower().strip()
+            index_html += f'<a href="#{target_id}" class="notion-link" target="_self"><span class="notion-icon">{avatar}</span> <span class="notion-text">{member}</span></a>'
+        index_html += '</div>'
+        st.markdown(index_html, unsafe_allow_html=True)
+
+    # Display each participant's grids inside modern glass containers
     for member in members_list:
+        # Invisible target anchor for scrolling offsets
+        target_id = member.lower().strip()
+        st.markdown(f"<div id='{target_id}' style='position: relative; top: -15px;'></div>", unsafe_allow_html=True)
+        
         with st.container(border=True):
-            st.markdown(f"<h3 class='member-header'>👤 {member}</h3>", unsafe_allow_html=True)
+            avatar = get_member_avatar(member)
+            st.markdown(f"<h3 class='member-header'>{avatar} {member}</h3>", unsafe_allow_html=True)
             
             # Display the commitment mission as an elegant quote box
             if 'missions_df' in globals() and not missions_df.empty:
@@ -1137,12 +1214,13 @@ with tab_leaderboard:
                         badge = f"{rank}."
                         rank_class = ""
                     
+                    avatar = get_member_avatar(item['Member'])
                     st.markdown(f"""
                     <div class="leaderboard-item {rank_class}">
                         <div class="leaderboard-name-section">
                             <span class="leaderboard-rank-badge">{badge}</span>
                             <div>
-                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-member-name">{avatar} {item['Member']}</span>
                                 <span class="leaderboard-habit-desc">{item['Habit']}</span>
                             </div>
                         </div>
@@ -1172,12 +1250,13 @@ with tab_leaderboard:
                         badge = f"{rank}."
                         rank_class = ""
                     
+                    avatar = get_member_avatar(item['Member'])
                     st.markdown(f"""
                     <div class="leaderboard-item {rank_class}">
                         <div class="leaderboard-name-section">
                             <span class="leaderboard-rank-badge">{badge}</span>
                             <div>
-                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-member-name">{avatar} {item['Member']}</span>
                                 <span class="leaderboard-habit-desc">{item['Habit']}</span>
                             </div>
                         </div>
@@ -1210,12 +1289,13 @@ with tab_leaderboard:
                         badge = f"{rank}."
                         rank_class = ""
                     
+                    avatar = get_member_avatar(item['Member'])
                     st.markdown(f"""
                     <div class="leaderboard-item {rank_class}">
                         <div class="leaderboard-name-section">
                             <span class="leaderboard-rank-badge">{badge}</span>
                             <div>
-                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-member-name">{avatar} {item['Member']}</span>
                                 <span class="leaderboard-habit-desc">{item['Habit']}</span>
                             </div>
                         </div>
@@ -1244,12 +1324,13 @@ with tab_leaderboard:
                         badge = f"{rank}."
                         rank_class = ""
                     
+                    avatar = get_member_avatar(item['Member'])
                     st.markdown(f"""
                     <div class="leaderboard-item {rank_class}">
                         <div class="leaderboard-name-section">
                             <span class="leaderboard-rank-badge">{badge}</span>
                             <div>
-                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-member-name">{avatar} {item['Member']}</span>
                                 <span class="leaderboard-habit-desc">{item['Habit']}</span>
                             </div>
                         </div>
@@ -1278,12 +1359,13 @@ with tab_leaderboard:
                         badge = f"{rank}."
                         rank_class = ""
                     
+                    avatar = get_member_avatar(item['Member'])
                     st.markdown(f"""
                     <div class="leaderboard-item {rank_class}">
                         <div class="leaderboard-name-section">
                             <span class="leaderboard-rank-badge">{badge}</span>
                             <div>
-                                <span class="leaderboard-member-name">{item['Member']}</span>
+                                <span class="leaderboard-member-name">{avatar} {item['Member']}</span>
                                 <span class="leaderboard-habit-desc">Total Completed Days</span>
                             </div>
                         </div>
