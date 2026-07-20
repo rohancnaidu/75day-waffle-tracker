@@ -1241,7 +1241,7 @@ with tab_leaderboard:
             
         with col_c_total:
             st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
-            st.markdown('<div class="leaderboard-title total-title">🏆 Most Days Total Done</div>', unsafe_allow_html=True)
+            st.markdown('<div class="leaderboard-title total-title">🏆 Total Days Completed</div>', unsafe_allow_html=True)
             if not leaderboard_total_days:
                 st.write("No data available.")
             else:
