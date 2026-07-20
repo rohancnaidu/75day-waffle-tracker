@@ -397,6 +397,78 @@ st.markdown("""
     div[role="group"]:has(input[value="❌"]) .waffle-watermark {
         opacity: 0 !important;
     }
+    /* Leaderboard Tab Styling */
+    .leaderboard-container {
+        background-color: rgba(255, 255, 255, 0.45) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        margin-bottom: 1.5rem !important;
+    }
+    .leaderboard-title {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        margin-bottom: 1rem !important;
+    }
+    .leaderboard-title.do-title {
+        color: #0f766e !important;
+    }
+    .leaderboard-title.drop-title {
+        color: #be123c !important;
+    }
+    .leaderboard-item {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        background-color: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        margin-bottom: 8px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        transition: all 0.2s ease !important;
+    }
+    .leaderboard-item:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+    .leaderboard-item.rank-1 {
+        border-left: 4px solid #eab308 !important; /* Gold */
+    }
+    .leaderboard-item.rank-2 {
+        border-left: 4px solid #94a3b8 !important; /* Silver */
+    }
+    .leaderboard-item.rank-3 {
+        border-left: 4px solid #b45309 !important; /* Bronze */
+    }
+    .leaderboard-name-section {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }
+    .leaderboard-rank-badge {
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        min-width: 24px !important;
+    }
+    .leaderboard-member-name {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        color: #1c1917 !important;
+        font-size: 0.92rem !important;
+    }
+    .leaderboard-streak-badge {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        color: #ea580c !important; /* Streak orange */
+        background-color: rgba(234, 88, 12, 0.08) !important;
+        padding: 3px 8px !important;
+        border-radius: 6px !important;
+    }
     
     /* Mobile-first responsive styling overrides */
     @media (max-width: 500px) {
@@ -482,6 +554,30 @@ st.markdown("""
             max-width: 350px !important;
             gap: 2.5px !important;
             margin-bottom: 2.5px !important;
+        }
+        
+        /* Leaderboard Mobile Styling */
+        .leaderboard-container {
+            padding: 12px !important;
+        }
+        .leaderboard-title {
+            font-size: 0.9rem !important;
+            margin-bottom: 0.8rem !important;
+        }
+        .leaderboard-item {
+            padding: 8px 10px !important;
+            margin-bottom: 6px !important;
+        }
+        .leaderboard-rank-badge {
+            font-size: 0.95rem !important;
+            min-width: 20px !important;
+        }
+        .leaderboard-member-name {
+            font-size: 0.85rem !important;
+        }
+        .leaderboard-streak-badge {
+            font-size: 0.72rem !important;
+            padding: 2px 6px !important;
         }
     }
 </style>
@@ -873,40 +969,134 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
                     on_change=save_and_sync
                 )
 
-# Display each participant's grids inside modern glass containers
-members_list = sorted(df["Member"].unique()) if not df.empty else []
+# ----------------- TABS SETUP -----------------
+tab_tracker, tab_leaderboard = st.tabs(["📊 Tracker Dashboard", "🏆 Leaderboard"])
 
-for member in members_list:
-    with st.container(border=True):
-        st.markdown(f"<h3 class='member-header'>👤 {member}</h3>", unsafe_allow_html=True)
-        
-        # Display the commitment mission as an elegant quote box
-        if 'missions_df' in globals() and not missions_df.empty:
-            match = missions_df[missions_df["Name"].str.lower().str.strip() == member.lower().strip()]
-            if not match.empty:
-                mission_text = match.iloc[0]["Mission"]
-                if pd.notna(mission_text) and str(mission_text).strip():
-                    st.markdown(f"""
-                    <div class="mission-quote-box">
-                        <p class="mission-quote-text">“{mission_text}”</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        member_rows = df[df["Member"] == member]
-        
-        # Calculate stats
-        do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
-        drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
-        
-        col1, col2 = st.columns(2, gap="large")
-        
-        with col1:
-            render_waffle(member, member_rows, "Do", "Daily DO", "do", do_done, do_failed, do_streak)
+with tab_tracker:
+    # Display each participant's grids inside modern glass containers
+    members_list = sorted(df["Member"].unique()) if not df.empty else []
+    
+    for member in members_list:
+        with st.container(border=True):
+            st.markdown(f"<h3 class='member-header'>👤 {member}</h3>", unsafe_allow_html=True)
             
-        with col2:
-            render_waffle(member, member_rows, "Drop", "Daily DROP", "drop", drop_done, drop_failed, drop_streak)
+            # Display the commitment mission as an elegant quote box
+            if 'missions_df' in globals() and not missions_df.empty:
+                match = missions_df[missions_df["Name"].str.lower().str.strip() == member.lower().strip()]
+                if not match.empty:
+                    mission_text = match.iloc[0]["Mission"]
+                    if pd.notna(mission_text) and str(mission_text).strip():
+                        st.markdown(f"""
+                        <div class="mission-quote-box">
+                            <p class="mission-quote-text">“{mission_text}”</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            member_rows = df[df["Member"] == member]
+            
+            # Calculate stats
+            do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
+            drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
+            
+            col1, col2 = st.columns(2, gap="large")
+            
+            with col1:
+                render_waffle(member, member_rows, "Do", "Daily DO", "do", do_done, do_failed, do_streak)
+                
+            with col2:
+                render_waffle(member, member_rows, "Drop", "Daily DROP", "drop", drop_done, drop_failed, drop_streak)
+            
+        st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+
+with tab_leaderboard:
+    # Gather leaderboard data
+    leaderboard_do = []
+    leaderboard_drop = []
+
+    if not df.empty:
+        members_list = df["Member"].unique()
+        for m in members_list:
+            member_rows = df[df["Member"] == m]
+            
+            # Do stats
+            _, _, do_streak = compute_stats(member_rows, "Do")
+            # Drop stats
+            _, _, drop_streak = compute_stats(member_rows, "Drop")
+            
+            leaderboard_do.append({"Member": m, "Streak": do_streak})
+            leaderboard_drop.append({"Member": m, "Streak": drop_streak})
+
+    # Sort in descending order of streak length
+    leaderboard_do = sorted(leaderboard_do, key=lambda x: x["Streak"], reverse=True)
+    leaderboard_drop = sorted(leaderboard_drop, key=lambda x: x["Streak"], reverse=True)
+    
+    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+    
+    col_lead_do, col_lead_drop = st.columns(2, gap="large")
+    
+    with col_lead_do:
+        st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+        st.markdown('<div class="leaderboard-title do-title">🏆 Things I\'ll Do Leaderboard</div>', unsafe_allow_html=True)
         
-    st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+        if not leaderboard_do:
+            st.write("No data available.")
+        else:
+            for rank, item in enumerate(leaderboard_do, 1):
+                if rank == 1:
+                    badge = "🥇"
+                    rank_class = "rank-1"
+                elif rank == 2:
+                    badge = "🥈"
+                    rank_class = "rank-2"
+                elif rank == 3:
+                    badge = "🥉"
+                    rank_class = "rank-3"
+                else:
+                    badge = f"{rank}."
+                    rank_class = ""
+                
+                st.markdown(f"""
+                <div class="leaderboard-item {rank_class}">
+                    <div class="leaderboard-name-section">
+                        <span class="leaderboard-rank-badge">{badge}</span>
+                        <span class="leaderboard-member-name">{item['Member']}</span>
+                    </div>
+                    <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
+                </div>
+                """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_lead_drop:
+        st.markdown('<div class="leaderboard-container">', unsafe_allow_html=True)
+        st.markdown('<div class="leaderboard-title drop-title">🏆 Things I\'ll Drop Leaderboard</div>', unsafe_allow_html=True)
+        
+        if not leaderboard_drop:
+            st.write("No data available.")
+        else:
+            for rank, item in enumerate(leaderboard_drop, 1):
+                if rank == 1:
+                    badge = "🥇"
+                    rank_class = "rank-1"
+                elif rank == 2:
+                    badge = "🥈"
+                    rank_class = "rank-2"
+                elif rank == 3:
+                    badge = "🥉"
+                    rank_class = "rank-3"
+                else:
+                    badge = f"{rank}."
+                    rank_class = ""
+                
+                st.markdown(f"""
+                <div class="leaderboard-item {rank_class}">
+                    <div class="leaderboard-name-section">
+                        <span class="leaderboard-rank-badge">{badge}</span>
+                        <span class="leaderboard-member-name">{item['Member']}</span>
+                    </div>
+                    <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
+                </div>
+                """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- HOVER INTERACTIONS JS INJECTION -----------------
 import streamlit.components.v1 as components
