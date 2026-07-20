@@ -460,6 +460,14 @@ st.markdown("""
         color: #1c1917 !important;
         font-size: 0.92rem !important;
     }
+    .leaderboard-habit-desc {
+        display: block !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.74rem !important;
+        color: #6b7280 !important; /* Charcoal gray */
+        font-weight: 500 !important;
+        margin-top: 1px !important;
+    }
     .leaderboard-streak-badge {
         font-family: 'Space Grotesk', sans-serif !important;
         font-size: 0.8rem !important;
@@ -574,6 +582,9 @@ st.markdown("""
         }
         .leaderboard-member-name {
             font-size: 0.85rem !important;
+        }
+        .leaderboard-habit-desc {
+            font-size: 0.68rem !important;
         }
         .leaderboard-streak-badge {
             font-size: 0.72rem !important;
@@ -1023,8 +1034,26 @@ with tab_leaderboard:
             # Drop stats
             _, _, drop_streak = compute_stats(member_rows, "Drop")
             
-            leaderboard_do.append({"Member": m, "Streak": do_streak})
-            leaderboard_drop.append({"Member": m, "Streak": drop_streak})
+            # Parse DO description
+            do_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("do")]
+            do_desc = ""
+            if not do_rows.empty:
+                do_desc = do_rows.iloc[0]["HabitType"]
+                for prefix in ["do:", "drop:"]:
+                    if do_desc.lower().startswith(prefix):
+                        do_desc = do_desc[len(prefix):].strip()
+            
+            # Parse DROP description
+            drop_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("drop")]
+            drop_desc = ""
+            if not drop_rows.empty:
+                drop_desc = drop_rows.iloc[0]["HabitType"]
+                for prefix in ["do:", "drop:"]:
+                    if drop_desc.lower().startswith(prefix):
+                        drop_desc = drop_desc[len(prefix):].strip()
+            
+            leaderboard_do.append({"Member": m, "Streak": do_streak, "Habit": do_desc})
+            leaderboard_drop.append({"Member": m, "Streak": drop_streak, "Habit": drop_desc})
 
     # Sort in descending order of streak length
     leaderboard_do = sorted(leaderboard_do, key=lambda x: x["Streak"], reverse=True)
@@ -1059,7 +1088,10 @@ with tab_leaderboard:
                 <div class="leaderboard-item {rank_class}">
                     <div class="leaderboard-name-section">
                         <span class="leaderboard-rank-badge">{badge}</span>
-                        <span class="leaderboard-member-name">{item['Member']}</span>
+                        <div>
+                            <span class="leaderboard-member-name">{item['Member']}</span>
+                            <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                        </div>
                     </div>
                     <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
                 </div>
@@ -1091,7 +1123,10 @@ with tab_leaderboard:
                 <div class="leaderboard-item {rank_class}">
                     <div class="leaderboard-name-section">
                         <span class="leaderboard-rank-badge">{badge}</span>
-                        <span class="leaderboard-member-name">{item['Member']}</span>
+                        <div>
+                            <span class="leaderboard-member-name">{item['Member']}</span>
+                            <span class="leaderboard-habit-desc">{item['Habit']}</span>
+                        </div>
                     </div>
                     <span class="leaderboard-streak-badge">🔥 {item['Streak']}d Streak</span>
                 </div>
