@@ -1079,49 +1079,57 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-x
 MISSIONS_FILE = "missions.csv"
 MISSIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv&gid=718170288"
 
-# Auto-sync from Google Sheets on initial page load / browser refresh
-if "has_synced" not in st.session_state:
-    st.session_state["has_synced"] = True
-    
-    # Sync main waffle tracker data
-    try:
-        df = pd.read_csv(CSV_URL)
-        df = clean_dataframe(df)
-        df.to_csv(LOCAL_FILE, index=False)
-        st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
-    except Exception as e:
-        st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
+# Caching dataframes in st.session_state to avoid disk I/O on page reruns
+if "df" not in st.session_state or "missions_df" not in st.session_state:
+    # Auto-sync from Google Sheets on initial page load / browser refresh
+    if "has_synced" not in st.session_state:
+        st.session_state["has_synced"] = True
+        
+        # Sync main waffle tracker data
+        try:
+            df = pd.read_csv(CSV_URL)
+            df = clean_dataframe(df)
+            df.to_csv(LOCAL_FILE, index=False)
+            st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
+        except Exception as e:
+            st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
+            if os.path.exists(LOCAL_FILE):
+                df = pd.read_csv(LOCAL_FILE)
+                df = clean_dataframe(df)
+            else:
+                df = init_mock_data()
+                
+        # Sync missions data
+        try:
+            missions_df = pd.read_csv(MISSIONS_CSV_URL)
+            missions_df.columns = [c.strip() for c in missions_df.columns]
+            missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
+            missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
+            missions_df.to_csv(MISSIONS_FILE, index=False)
+        except Exception as e:
+            if os.path.exists(MISSIONS_FILE):
+                missions_df = pd.read_csv(MISSIONS_FILE)
+            else:
+                missions_df = pd.DataFrame(columns=["Name", "Mission"])
+    else:
+        # Read main waffle tracker data
         if os.path.exists(LOCAL_FILE):
             df = pd.read_csv(LOCAL_FILE)
             df = clean_dataframe(df)
         else:
             df = init_mock_data()
             
-    # Sync missions data
-    try:
-        missions_df = pd.read_csv(MISSIONS_CSV_URL)
-        missions_df.columns = [c.strip() for c in missions_df.columns]
-        missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
-        missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
-        missions_df.to_csv(MISSIONS_FILE, index=False)
-    except Exception as e:
+        # Read missions data
         if os.path.exists(MISSIONS_FILE):
             missions_df = pd.read_csv(MISSIONS_FILE)
         else:
             missions_df = pd.DataFrame(columns=["Name", "Mission"])
+            
+    st.session_state["df"] = df
+    st.session_state["missions_df"] = missions_df
 else:
-    # Read main waffle tracker data
-    if os.path.exists(LOCAL_FILE):
-        df = pd.read_csv(LOCAL_FILE)
-        df = clean_dataframe(df)
-    else:
-        df = init_mock_data()
-        
-    # Read missions data
-    if os.path.exists(MISSIONS_FILE):
-        missions_df = pd.read_csv(MISSIONS_FILE)
-    else:
-        missions_df = pd.DataFrame(columns=["Name", "Mission"])
+    df = st.session_state["df"]
+    missions_df = st.session_state["missions_df"]
 
 # Check if Streamlit GSheets secrets are configured
 def is_gsheets_configured():
@@ -1207,6 +1215,7 @@ def save_and_sync():
                             df_to_update.at[idx, f"Day {day_num}"] = reverse_map.get(val, "")
         
         df_to_update.to_csv(LOCAL_FILE, index=False)
+        st.session_state["df"] = df_to_update
         st.toast("Progress saved locally & syncing to cloud...", icon="💾")
         
         # Dispatch cloud sync to background thread to prevent UI freezing
@@ -1234,6 +1243,19 @@ with st.container(border=True):
                 df_cloud = pd.read_csv(CSV_URL)
                 df_cloud = clean_dataframe(df_cloud)
                 df_cloud.to_csv(LOCAL_FILE, index=False)
+                st.session_state["df"] = df_cloud
+                
+                # Fetch fresh missions
+                try:
+                    m_df = pd.read_csv(MISSIONS_CSV_URL)
+                    m_df.columns = [c.strip() for c in m_df.columns]
+                    m_df["Name"] = m_df["Name"].fillna("").astype(str).str.strip()
+                    m_df["Mission"] = m_df["Mission"].fillna("").astype(str).str.strip()
+                    m_df.to_csv(MISSIONS_FILE, index=False)
+                    st.session_state["missions_df"] = m_df
+                except:
+                    pass
+                    
                 st.toast("Synchronized with Google Sheet!", icon="🔄")
                 st.rerun()
             except Exception as e:
@@ -1325,6 +1347,15 @@ def get_member_avatar(member_name):
 
 # ----------------- METRICS DASHBOARD -----------------
 def compute_stats(rows, habit_type):
+    if rows.empty:
+        return 0, 0, 0
+        
+    member = rows.iloc[0]["Member"]
+    if 'stats_cache' in globals() and member in stats_cache:
+        cached = stats_cache[member].get(habit_type.lower())
+        if cached:
+            return cached["done"], cached["failed"], cached["streak"]
+            
     habit_row = rows[rows["HabitType"].str.lower().str.startswith(habit_type.lower())]
     if habit_row.empty:
         return 0, 0, 0
@@ -1344,6 +1375,56 @@ def compute_stats(rows, habit_type):
             curr_streak = 0
             
     return done_count, failed_count, max_streak
+
+# ----------------- PRECOMPUTED STATISTICS CACHE -----------------
+stats_cache = {}
+if not df.empty:
+    for m in df["Member"].unique():
+        member_rows = df[df["Member"] == m]
+        
+        # Do stats (will call original compute_stats because stats_cache is currently empty for this member!)
+        do_done, do_failed, do_streak = compute_stats(member_rows, "Do")
+        # Drop stats
+        drop_done, drop_failed, drop_streak = compute_stats(member_rows, "Drop")
+        
+        # Precompute phase stats
+        phases = {}
+        for phase_num in range(1, 6):
+            start_day = (phase_num - 1) * 15 + 1
+            end_day = phase_num * 15
+            
+            # Do habits
+            do_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("do")]
+            p_do_done = 0
+            if not do_rows.empty:
+                do_row = do_rows.iloc[0]
+                for day in range(start_day, end_day + 1):
+                    val = do_row.get(f"Day {day}", "")
+                    if str(val).strip().lower() in ["done", "✅"]:
+                        p_do_done += 1
+                        
+            # Drop habits
+            drop_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("drop")]
+            p_drop_done = 0
+            if not drop_rows.empty:
+                drop_row = drop_rows.iloc[0]
+                for day in range(start_day, end_day + 1):
+                    val = drop_row.get(f"Day {day}", "")
+                    if str(val).strip().lower() in ["done", "✅"]:
+                        p_drop_done += 1
+                        
+            phases[phase_num] = {
+                "do": p_do_done,
+                "drop": p_drop_done,
+                "total": p_do_done + p_drop_done,
+                "pct": ((p_do_done + p_drop_done) / 30.0) * 100.0
+            }
+            
+        stats_cache[m] = {
+            "do": {"done": do_done, "failed": do_failed, "streak": do_streak},
+            "drop": {"done": drop_done, "failed": drop_failed, "streak": drop_streak},
+            "phases": phases
+        }
 
 # ----------------- Waffle Grid Rendering -----------------
 def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_done, stats_failed, stats_streak):
@@ -1487,6 +1568,14 @@ with tab_phases:
         
         # Helper function for mini-phase calculations
         def compute_phase_stats(member_rows, phase_num):
+            if not member_rows.empty:
+                member = member_rows.iloc[0]["Member"]
+                if 'stats_cache' in globals() and member in stats_cache:
+                    phase_data = stats_cache[member]["phases"].get(phase_num)
+                    if phase_data:
+                        pct = phase_data["pct"]
+                        return phase_data["do"], phase_data["drop"], phase_data["total"], pct, pct >= 80.0
+                        
             start_day = (phase_num - 1) * 15 + 1
             end_day = phase_num * 15
             
