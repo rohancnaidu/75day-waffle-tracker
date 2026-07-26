@@ -573,6 +573,55 @@ st.markdown("""
         color: #4f46e5 !important;
     }
     
+    /* Mini-Phases Layout Styling */
+    .phase-card {
+        background-color: rgba(255, 255, 255, 0.55) !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 1rem !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+    .phase-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    }
+    .phase-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        border-bottom: 1px dashed rgba(0, 0, 0, 0.06) !important;
+        padding: 8px 0 !important;
+    }
+    .phase-row:last-child {
+        border-bottom: none !important;
+    }
+    .phase-meta {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    .phase-badge {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.03em !important;
+        padding: 2px 8px !important;
+        border-radius: 4px !important;
+        display: inline-block !important;
+    }
+    .phase-badge.met {
+        color: #0f766e !important;
+        background-color: rgba(15, 118, 110, 0.08) !important;
+        border: 1px solid rgba(15, 118, 110, 0.15) !important;
+    }
+    .phase-badge.missed {
+        color: #be123c !important;
+        background-color: rgba(190, 18, 60, 0.08) !important;
+        border: 1px solid rgba(190, 18, 60, 0.15) !important;
+    }
+    
     /* Mobile-first responsive styling overrides */
     @media (max-width: 500px) {
         /* Mobile cell watermark adjustments */
@@ -703,6 +752,23 @@ st.markdown("""
         }
         .notion-icon {
             font-size: 0.95rem !important;
+        }
+        
+        /* Mini-Phases Mobile Overrides */
+        .phase-card {
+            padding: 10px 14px !important;
+            margin-bottom: 0.8rem !important;
+        }
+        .phase-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 6px !important;
+            padding: 10px 0 !important;
+        }
+        .phase-meta {
+            width: 100% !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
         }
     }
 </style>
@@ -1111,7 +1177,7 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
                 )
 
 # ----------------- TABS SETUP -----------------
-tab_tracker, tab_leaderboard = st.tabs(["📊 Tracker Dashboard", "🏆 Leaderboard"])
+tab_tracker, tab_phases, tab_leaderboard = st.tabs(["📊 Tracker Dashboard", "🎯 Mini-Phases", "🏆 Leaderboard"])
 
 with tab_tracker:
     # Display Notion-style quick navigation index with caricature avatars
@@ -1162,6 +1228,144 @@ with tab_tracker:
                 render_waffle(member, member_rows, "Drop", "Daily DROP", "drop", drop_done, drop_failed, drop_streak)
             
         st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+
+with tab_phases:
+    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-family: Space Grotesk, sans-serif; font-weight: 700; color: #1c1917; margin-bottom: 0.5rem;'>🎯 15-Day Mini-Phases Tracking</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 0.88rem; color: #57534e; margin-bottom: 1.5rem;'>Our 75-day challenge is broken into 5 mini-phases of 15 days. The success target is <strong>80% or higher</strong> (at least 24/30 completed days combined) for each mini-phase.</p>", unsafe_allow_html=True)
+    
+    if df.empty:
+        st.write("No data available.")
+    else:
+        members_list = sorted(df["Member"].unique())
+        
+        # Helper function for mini-phase calculations
+        def compute_phase_stats(member_rows, phase_num):
+            start_day = (phase_num - 1) * 15 + 1
+            end_day = phase_num * 15
+            
+            # Do habits
+            do_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("do")]
+            do_done = 0
+            if not do_rows.empty:
+                do_row = do_rows.iloc[0]
+                for day in range(start_day, end_day + 1):
+                    val = do_row.get(f"Day {day}", "")
+                    if str(val).strip().lower() in ["done", "✅"]:
+                        do_done += 1
+                        
+            # Drop habits
+            drop_rows = member_rows[member_rows["HabitType"].str.lower().str.startswith("drop")]
+            drop_done = 0
+            if not drop_rows.empty:
+                drop_row = drop_rows.iloc[0]
+                for day in range(start_day, end_day + 1):
+                    val = drop_row.get(f"Day {day}", "")
+                    if str(val).strip().lower() in ["done", "✅"]:
+                        drop_done += 1
+                        
+            total_done = do_done + drop_done
+            percentage = (total_done / 30.0) * 100.0
+            target_met = percentage >= 80.0
+            
+            return do_done, drop_done, total_done, percentage, target_met
+
+        view_mode = st.radio(
+            "Select View Perspective:",
+            ["📊 View by Participant", "🎯 View by Mini-Phase"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="phase_view_mode"
+        )
+        
+        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+        
+        if view_mode == "📊 View by Participant":
+            col_p1, col_p2 = st.columns(2, gap="large")
+            for idx, member in enumerate(members_list):
+                member_rows = df[df["Member"] == member]
+                avatar = get_member_avatar(member)
+                
+                # Render half on left column, half on right column
+                target_col = col_p1 if idx % 2 == 0 else col_p2
+                
+                with target_col:
+                    st.markdown(f"""
+                    <div class="phase-card">
+                        <h4 style="font-family: Space Grotesk, sans-serif; font-weight: 700; color: #1c1917; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 8px;">
+                            <span>{avatar}</span> <span>{member}'s Phases</span>
+                        </h4>
+                    """, unsafe_allow_html=True)
+                    
+                    for phase in range(1, 6):
+                        do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
+                        badge_class = "met" if met else "missed"
+                        badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Missed ({pct:.1f}%)"
+                        
+                        # Phase label
+                        p_label = f"Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
+                        
+                        st.markdown(f"""
+                        <div class="phase-row">
+                            <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #37352f;">{p_label}</span>
+                            <div class="phase-meta">
+                                <span style="font-size: 0.8rem; color: #57534e;">
+                                    🟢 {do_done}/15 | 🔴 {drop_done}/15 | ⚡ {total_done}/30
+                                </span>
+                                <span class="phase-badge {badge_class}">{badge_text}</span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+        else: # View by Mini-Phase
+            col_ph1, col_ph2 = st.columns(2, gap="large")
+            for phase in range(1, 6):
+                target_col = col_ph1 if phase in [1, 3, 5] else col_ph2
+                p_label = f"Mini-Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
+                
+                with target_col:
+                    st.markdown(f"""
+                    <div class="phase-card">
+                        <h4 style="font-family: Space Grotesk, sans-serif; font-weight: 700; color: #1c1917; margin: 0 0 1rem 0;">🎯 {p_label}</h4>
+                    """, unsafe_allow_html=True)
+                    
+                    # Calculate for all members and sort by percentage descending
+                    phase_rankings = []
+                    for member in members_list:
+                        member_rows = df[df["Member"] == member]
+                        do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
+                        phase_rankings.append({
+                            "Member": member,
+                            "Do": do_done,
+                            "Drop": drop_done,
+                            "Total": total_done,
+                            "Pct": pct,
+                            "Met": met
+                        })
+                    
+                    # Sort rankings descending by completion percentage
+                    phase_rankings = sorted(phase_rankings, key=lambda x: x["Pct"], reverse=True)
+                    
+                    for item in phase_rankings:
+                        avatar = get_member_avatar(item["Member"])
+                        badge_class = "met" if item["Met"] else "missed"
+                        badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Missed ({item['Pct']:.1f}%)"
+                        
+                        st.markdown(f"""
+                        <div class="phase-row">
+                            <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #37352f;">{avatar} {item['Member']}</span>
+                            <div class="phase-meta">
+                                <span style="font-size: 0.8rem; color: #57534e;">
+                                    🟢 {item['Do']}/15 | 🔴 {item['Drop']}/15 | ⚡ {item['Total']}/30
+                                </span>
+                                <span class="phase-badge {badge_class}">{badge_text}</span>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                    st.markdown("</div>", unsafe_allow_html=True)
 
 with tab_leaderboard:
     # Gather leaderboard data
