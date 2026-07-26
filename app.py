@@ -24,6 +24,23 @@ st.markdown("""
         color: #1e1e24;
     }
     
+    /* Streamlit Tabs custom color and visibility overrides */
+    div[data-testid="stTabs"] button {
+        color: #57534e !important; /* Muted stone color */
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        opacity: 1 !important;
+        transition: color 0.2s ease, background-color 0.2s ease !important;
+    }
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        color: #0f766e !important; /* Elegant Teal for active tab */
+        font-weight: 700 !important;
+    }
+    div[data-testid="stTabs"] button:hover {
+        color: #0d9488 !important; /* Bright Teal on hover */
+    }
+    
     /* Remove default Streamlit top whitespace */
     [data-testid="block-container"] {
         padding-top: 1rem !important;
