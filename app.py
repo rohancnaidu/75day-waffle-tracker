@@ -896,54 +896,59 @@ components.html("""
             }, true);
             
             function setupHoverListeners() {
-                const grids = parentDoc.querySelectorAll('div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox');
-                
-                grids.forEach(grid => {
-                    const input = grid.querySelector('input');
-                    if (!input) return;
-                    
-                    const ariaLabel = input.getAttribute('aria-label') || "";
-                    const dayNum = ariaLabel.replace('D', '');
-                    
-                    if (dayNum) {
-                        input.title = "Day " + dayNum;
-                    }
-                    
-                    if (grid.dataset.hoverBound) return;
-                    grid.dataset.hoverBound = "true";
-                    
-                    if (dayNum) {
-                        const group = grid.querySelector('div[role="group"]');
-                        if (group) {
-                            const watermark = parentDoc.createElement('span');
-                            watermark.className = 'waffle-watermark';
-                            watermark.innerText = dayNum;
-                            group.appendChild(watermark);
-                        }
-                    }
-                    
-                    grid.addEventListener('mouseenter', function() {
-                        const activeInput = parentDoc.activeElement;
-                        if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true' && activeInput !== input) {
-                            closeDropdown(activeInput);
-                        }
-                        
-                        const isExpanded = input.getAttribute('aria-expanded') === 'true';
-                        if (!isExpanded) {
-                            input.focus();
-                            input.click();
-                        }
-                    });
-                    
-                    grid.addEventListener('mouseleave', function() {
-                        setTimeout(() => {
-                            if (isHoveringDropdown) return;
-                            const isExpanded = input.getAttribute('aria-expanded') === 'true';
-                            if (isExpanded) {
-                                closeDropdown(input);
+                const rows = parentDoc.querySelectorAll('div[data-testid="stHorizontalBlock"]');
+                rows.forEach(row => {
+                    const cols = row.querySelectorAll('div[data-testid="stColumn"]');
+                    if (cols.length >= 15) {
+                        const grids = row.querySelectorAll('div.stSelectbox');
+                        grids.forEach(grid => {
+                            const input = grid.querySelector('input');
+                            if (!input) return;
+                            
+                            const ariaLabel = input.getAttribute('aria-label') || "";
+                            const dayNum = ariaLabel.replace('D', '');
+                            
+                            if (dayNum) {
+                                input.title = "Day " + dayNum;
                             }
-                        }, 150);
-                    });
+                            
+                            if (grid.dataset.hoverBound) return;
+                            grid.dataset.hoverBound = "true";
+                            
+                            if (dayNum) {
+                                const container = grid.querySelector('div[role="group"]') || grid;
+                                if (container && !container.querySelector('.waffle-watermark')) {
+                                    const watermark = parentDoc.createElement('span');
+                                    watermark.className = 'waffle-watermark';
+                                    watermark.innerText = dayNum;
+                                    container.appendChild(watermark);
+                                }
+                            }
+                            
+                            grid.addEventListener('mouseenter', function() {
+                                const activeInput = parentDoc.activeElement;
+                                if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true' && activeInput !== input) {
+                                    closeDropdown(activeInput);
+                                }
+                                
+                                const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                                if (!isExpanded) {
+                                    input.focus();
+                                    input.click();
+                                }
+                            });
+                            
+                            grid.addEventListener('mouseleave', function() {
+                                setTimeout(() => {
+                                    if (isHoveringDropdown) return;
+                                    const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                                    if (isExpanded) {
+                                        closeDropdown(input);
+                                    }
+                                }, 150);
+                            });
+                        });
+                    }
                 });
             }
             
