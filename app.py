@@ -61,6 +61,11 @@ st.markdown("""
         font-family: 'Space Grotesk', sans-serif !important;
         font-weight: 600 !important;
     }
+    div[data-testid="stRadio"] p {
+        color: #1c1917 !important; /* Stone charcoal */
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+    }
     div[data-testid="stRadio"] div[role="radiogroup"] label {
         color: #37352f !important; /* Inactive option color */
         font-weight: 500 !important;
