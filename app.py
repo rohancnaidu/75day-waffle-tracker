@@ -238,6 +238,31 @@ st.markdown("""
         padding: 0 !important;
     }
     
+    /* Style phase labels column */
+    div.phase-label-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 28px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .phase-label {
+        font-size: 8px !important;
+        font-weight: 700 !important;
+        color: #78716c !important; /* Stone-500 */
+        background-color: #f5f5f4 !important; /* Stone-100 */
+        border: 1px solid #e7e5e4 !important; /* Stone-200 */
+        border-radius: 4px !important;
+        width: 22px !important;
+        height: 22px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    }
+    
     /* Ensure the selectbox dropdown container has a horizontal, aesthetic width with breathing room */
     div[data-testid="stSelectboxVirtualDropdown"] {
         width: 132px !important;
@@ -756,9 +781,19 @@ st.markdown("""
         
         /* Set grid wrapper bounds for mobile */
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
-            max-width: 350px !important;
+            max-width: 375px !important;
             gap: 2.5px !important;
             margin-bottom: 2.5px !important;
+        }
+        
+        div.phase-label-wrapper {
+            height: 20px !important;
+        }
+        .phase-label {
+            font-size: 6.5px !important;
+            width: 16px !important;
+            height: 16px !important;
+            border-radius: 3px !important;
         }
         
         /* Leaderboard Mobile Styling */
@@ -1352,7 +1387,10 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
     options_map = {"": "⬜", "Done": "✅", "Failed": "❌"}
     
     for r in range(5):
-        cols = st.columns(15)
+        cols = st.columns(16)
+        with cols[0]:
+            st.markdown(f"<div class='phase-label-wrapper'><span class='phase-label'>P{r+1}</span></div>", unsafe_allow_html=True)
+            
         for c in range(15):
             day_num = (r * 15) + c + 1
             col_name = f"Day {day_num}"
@@ -1373,7 +1411,7 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
                 
             default_emoji = options_map.get(current_val, "⬜")
             
-            with cols[c]:
+            with cols[c + 1]:
                 st.selectbox(
                     f"D{day_num}",
                     options=["⬜", "✅", "❌"],
