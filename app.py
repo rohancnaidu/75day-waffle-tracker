@@ -1666,6 +1666,12 @@ components.html("""
 <script>
     (function() {
         const parentDoc = window.parent.document;
+        
+        // Reset scroll position to top if no URL hash anchor is loaded
+        if (!window.parent.location.hash) {
+            window.parent.scrollTo(0, 0);
+        }
+        
         let isHoveringDropdown = false;
         
         // Helper function to close dropdown cleanly
