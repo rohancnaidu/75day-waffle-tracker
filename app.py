@@ -599,6 +599,16 @@ st.markdown("""
         margin-bottom: 1rem !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     }
+    .phase-card-title {
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 700 !important;
+        color: #1c1917 !important;
+        margin: 0 0 1rem 0 !important;
+        font-size: 1.15rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
     .phase-card:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
@@ -792,6 +802,10 @@ st.markdown("""
         .phase-card {
             padding: 10px 14px !important;
             margin-bottom: 0.8rem !important;
+        }
+        .phase-card-title {
+            font-size: 0.95rem !important;
+            margin-bottom: 0.75rem !important;
         }
     }
 </style>
@@ -1314,7 +1328,7 @@ with tab_phases:
                 with target_col:
                     st.markdown(f"""
                     <div class="phase-card">
-                        <h4 style="font-family: Space Grotesk, sans-serif; font-weight: 700; color: #1c1917; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 8px;">
+                        <h4 class="phase-card-title">
                             <span>{avatar}</span> <span>{member}'s Phases</span>
                         </h4>
                     """, unsafe_allow_html=True)
@@ -1357,7 +1371,7 @@ with tab_phases:
                 with target_col:
                     st.markdown(f"""
                     <div class="phase-card">
-                        <h4 style="font-family: Space Grotesk, sans-serif; font-weight: 700; color: #1c1917; margin: 0 0 1rem 0;">🎯 {p_label}</h4>
+                        <h4 class="phase-card-title">🎯 {p_label}</h4>
                     """, unsafe_allow_html=True)
                     
                     # Calculate for all members and sort by percentage descending
