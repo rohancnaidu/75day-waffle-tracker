@@ -25,19 +25,33 @@ st.markdown("""
     }
     
     /* Streamlit Tabs custom color and visibility overrides */
-    div[data-testid="stTabs"] button {
+    div[data-testid="stTabs"] [role="tab"] {
         color: #57534e !important; /* Muted stone color */
         font-family: 'Space Grotesk', sans-serif !important;
         font-weight: 600 !important;
         font-size: 0.95rem !important;
         opacity: 1 !important;
-        transition: color 0.2s ease, background-color 0.2s ease !important;
     }
-    div[data-testid="stTabs"] button[aria-selected="true"] {
+    div[data-testid="stTabs"] [role="tab"] p {
+        color: #57534e !important; /* Muted stone color */
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        opacity: 1 !important;
+        transition: color 0.15s ease !important;
+    }
+    div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
         color: #0f766e !important; /* Elegant Teal for active tab */
         font-weight: 700 !important;
     }
-    div[data-testid="stTabs"] button:hover {
+    div[data-testid="stTabs"] [role="tab"][aria-selected="true"] p {
+        color: #0f766e !important; /* Elegant Teal for active tab */
+        font-weight: 700 !important;
+    }
+    div[data-testid="stTabs"] [role="tab"]:hover {
+        color: #0d9488 !important; /* Bright Teal on hover */
+    }
+    div[data-testid="stTabs"] [role="tab"]:hover p {
         color: #0d9488 !important; /* Bright Teal on hover */
     }
     
