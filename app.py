@@ -1271,10 +1271,9 @@ with tab_phases:
             return do_done, drop_done, total_done, percentage, target_met
 
         view_mode = st.radio(
-            "Select View Perspective:",
-            ["📊 View by Participant", "🎯 View by Mini-Phase"],
+            "🔍 Group Stats By:",
+            ["🎯 View by Mini-Phase", "📊 View by Participant"],
             horizontal=True,
-            label_visibility="collapsed",
             key="phase_view_mode"
         )
         
@@ -1300,7 +1299,7 @@ with tab_phases:
                     for phase in range(1, 6):
                         do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
                         badge_class = "met" if met else "missed"
-                        badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Missed ({pct:.1f}%)"
+                        badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Achieved ({pct:.1f}%)"
                         
                         # Phase label
                         p_label = f"Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
@@ -1351,7 +1350,7 @@ with tab_phases:
                     for item in phase_rankings:
                         avatar = get_member_avatar(item["Member"])
                         badge_class = "met" if item["Met"] else "missed"
-                        badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Missed ({item['Pct']:.1f}%)"
+                        badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Achieved ({item['Pct']:.1f}%)"
                         
                         st.markdown(f"""
                         <div class="phase-row">
