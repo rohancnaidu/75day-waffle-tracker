@@ -811,6 +811,144 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ----------------- HOVER INTERACTIONS JS INJECTION -----------------
+import streamlit.components.v1 as components
+components.html("""
+<script>
+    (function() {
+        try {
+            const parentDoc = window.parent.document;
+            let isHoveringDropdown = false;
+            
+            // Helper function to close dropdown cleanly
+            function closeDropdown(input) {
+                if (!input) return;
+                const escEvent = new KeyboardEvent('keydown', {
+                    key: 'Escape',
+                    code: 'Escape',
+                    keyCode: 27,
+                    which: 27,
+                    bubbles: true,
+                    cancelable: true
+                });
+                input.dispatchEvent(escEvent);
+                input.blur();
+            }
+            
+            // Mobile-friendly outside tap handler to prevent overlapping option bars
+            function handleOutsideTap(e) {
+                const activeInput = parentDoc.activeElement;
+                if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                    const clickedSelectbox = e.target.closest('div.stSelectbox');
+                    const clickedDropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+                    
+                    // If they tapped outside the currently active selectbox and its popover dropdown, close it immediately
+                    if (!clickedSelectbox || clickedSelectbox.querySelector('input') !== activeInput) {
+                        if (!clickedDropdown) {
+                            closeDropdown(activeInput);
+                        }
+                    }
+                }
+            }
+            
+            // Listen to mousedown and touchstart in the capture phase to dismiss popovers
+            parentDoc.addEventListener('mousedown', handleOutsideTap, true);
+            parentDoc.addEventListener('touchstart', handleOutsideTap, true);
+            
+            // Track hover state on the dropdown container globally
+            parentDoc.addEventListener('mouseover', function(e) {
+                const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+                if (dropdown) {
+                    isHoveringDropdown = true;
+                }
+            }, true);
+            
+            parentDoc.addEventListener('mouseout', function(e) {
+                const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
+                if (dropdown) {
+                    if (!e.relatedTarget || !dropdown.contains(e.relatedTarget)) {
+                        isHoveringDropdown = false;
+                        setTimeout(() => {
+                            const activeInput = parentDoc.activeElement;
+                            if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                                if (!isHoveringDropdown) {
+                                    closeDropdown(activeInput);
+                                }
+                            }
+                        }, 150);
+                    }
+                }
+            }, true);
+            
+            function setupHoverListeners() {
+                const grids = parentDoc.querySelectorAll('div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox');
+                
+                grids.forEach(grid => {
+                    const input = grid.querySelector('input');
+                    if (!input) return;
+                    
+                    const ariaLabel = input.getAttribute('aria-label') || "";
+                    const dayNum = ariaLabel.replace('D', '');
+                    
+                    if (dayNum) {
+                        input.title = "Day " + dayNum;
+                    }
+                    
+                    if (grid.dataset.hoverBound) return;
+                    grid.dataset.hoverBound = "true";
+                    
+                    if (dayNum) {
+                        const group = grid.querySelector('div[role="group"]');
+                        if (group) {
+                            const watermark = parentDoc.createElement('span');
+                            watermark.className = 'waffle-watermark';
+                            watermark.innerText = dayNum;
+                            group.appendChild(watermark);
+                        }
+                    }
+                    
+                    grid.addEventListener('mouseenter', function() {
+                        const activeInput = parentDoc.activeElement;
+                        if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true' && activeInput !== input) {
+                            closeDropdown(activeInput);
+                        }
+                        
+                        const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                        if (!isExpanded) {
+                            input.focus();
+                            input.click();
+                        }
+                    });
+                    
+                    grid.addEventListener('mouseleave', function() {
+                        setTimeout(() => {
+                            if (isHoveringDropdown) return;
+                            const isExpanded = input.getAttribute('aria-expanded') === 'true';
+                            if (isExpanded) {
+                                closeDropdown(input);
+                            }
+                        }, 150);
+                    });
+                });
+            }
+            
+            setupHoverListeners();
+            setTimeout(setupHoverListeners, 300);
+            setTimeout(setupHoverListeners, 1000);
+            
+            parentDoc.addEventListener('scroll', function() {
+                const activeInput = parentDoc.activeElement;
+                if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
+                    closeDropdown(activeInput);
+                }
+            }, true);
+        } catch (e) {
+            console.warn("Cross-origin hover script context bypassed:", e);
+        }
+    })();
+</script>
+""", height=0)
+
 # ----------------- LOCAL DATA SETUP -----------------
 LOCAL_FILE = "data.csv"
 
@@ -1660,155 +1798,4 @@ with tab_leaderboard:
                     """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-# ----------------- HOVER INTERACTIONS JS INJECTION -----------------
-import streamlit.components.v1 as components
-components.html("""
-<script>
-    (function() {
-        const parentDoc = window.parent.document;
-        
-        // Reset scroll position to top if no URL hash anchor is loaded
-        if (!window.parent.location.hash) {
-            window.parent.scrollTo(0, 0);
-        }
-        
-        let isHoveringDropdown = false;
-        
-        // Helper function to close dropdown cleanly
-        function closeDropdown(input) {
-            if (!input) return;
-            const escEvent = new KeyboardEvent('keydown', {
-                key: 'Escape',
-                code: 'Escape',
-                keyCode: 27,
-                which: 27,
-                bubbles: true,
-                cancelable: true
-            });
-            input.dispatchEvent(escEvent);
-            input.blur();
-        }
-        
-        // Mobile-friendly outside tap handler to prevent overlapping option bars
-        function handleOutsideTap(e) {
-            const activeInput = parentDoc.activeElement;
-            if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
-                const clickedSelectbox = e.target.closest('div.stSelectbox');
-                const clickedDropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
-                
-                // If they tapped outside the currently active selectbox and its popover dropdown, close it immediately
-                if (!clickedSelectbox || clickedSelectbox.querySelector('input') !== activeInput) {
-                    if (!clickedDropdown) {
-                        closeDropdown(activeInput);
-                    }
-                }
-            }
-        }
-        
-        // Listen to mousedown and touchstart in the capture phase to dismiss old popovers before new ones open
-        parentDoc.addEventListener('mousedown', handleOutsideTap, true);
-        parentDoc.addEventListener('touchstart', handleOutsideTap, true);
-        
-        // Track hover state on the dropdown container globally in the parent document
-        parentDoc.addEventListener('mouseover', function(e) {
-            const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
-            if (dropdown) {
-                isHoveringDropdown = true;
-            }
-        }, true);
-        
-        parentDoc.addEventListener('mouseout', function(e) {
-            const dropdown = e.target.closest('div[data-testid="stSelectboxVirtualDropdown"]');
-            if (dropdown) {
-                if (!e.relatedTarget || !dropdown.contains(e.relatedTarget)) {
-                    isHoveringDropdown = false;
-                    // If mouse left the dropdown, close the active input after a short delay
-                    setTimeout(() => {
-                        const activeInput = parentDoc.activeElement;
-                        if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
-                            if (!isHoveringDropdown) {
-                                closeDropdown(activeInput);
-                            }
-                        }
-                    }, 150);
-                }
-            }
-        }, true);
-        
-        function setupHoverListeners() {
-            // Find all waffle selectbox elements in the grid
-            const grids = parentDoc.querySelectorAll('div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox');
-            
-            grids.forEach(grid => {
-                const input = grid.querySelector('input');
-                if (!input) return;
-                
-                // Read aria-label to get day number (e.g., "D15")
-                const ariaLabel = input.getAttribute('aria-label') || "";
-                const dayNum = ariaLabel.replace('D', '');
-                
-                if (dayNum) {
-                    input.title = "Day " + dayNum;
-                }
-                
-                // Avoid double-binding event listeners
-                if (grid.dataset.hoverBound) return;
-                grid.dataset.hoverBound = "true";
-                
-                // Add tiny visual day watermark inside the cell
-                if (dayNum) {
-                    const group = grid.querySelector('div[role="group"]');
-                    if (group) {
-                        const watermark = parentDoc.createElement('span');
-                        watermark.className = 'waffle-watermark';
-                        watermark.innerText = dayNum;
-                        group.appendChild(watermark);
-                    }
-                }
-                
-                // When mouse enters the cell
-                grid.addEventListener('mouseenter', function() {
-                    // Immediately close any other open dropdown before opening this one
-                    const activeInput = parentDoc.activeElement;
-                    if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true' && activeInput !== input) {
-                        closeDropdown(activeInput);
-                    }
-                    
-                    const isExpanded = input.getAttribute('aria-expanded') === 'true';
-                    if (!isExpanded) {
-                        // Focus and click the input to trigger dropdown open
-                        input.focus();
-                        input.click();
-                    }
-                });
-                
-                // When mouse leaves the cell
-                grid.addEventListener('mouseleave', function() {
-                    // Wait a short grace period to allow the mouse to transition to the dropdown popover
-                    setTimeout(() => {
-                        if (isHoveringDropdown) return; // Keep open if mouse is now on the dropdown options
-                        
-                        const isExpanded = input.getAttribute('aria-expanded') === 'true';
-                        if (isExpanded) {
-                            closeDropdown(input);
-                        }
-                    }, 150);
-                });
-            });
-        }
-        
-        // Run immediately and on a delay to capture rendering
-        setupHoverListeners();
-        setTimeout(setupHoverListeners, 300);
-        setTimeout(setupHoverListeners, 1000);
-        
-        // Also listen for scroll events to auto-dismiss open dropdowns
-        parentDoc.addEventListener('scroll', function() {
-            const activeInput = parentDoc.activeElement;
-            if (activeInput && activeInput.tagName === 'INPUT' && activeInput.getAttribute('aria-expanded') === 'true') {
-                closeDropdown(activeInput);
-            }
-        }, true); // Use capture phase to catch all scrolls
-    })();
-</script>
-""", height=0)
+
