@@ -14,7 +14,6 @@ st.set_page_config(
 # Premium dark theme styling with HSL tailored gradients, Inter/Outfit typography,
 # glassmorphism, and responsive waffle grid adjustments.
 st.markdown("""
-<img src="x" onerror="try{if(!window.waffle_loaded){window.waffle_loaded=true;let c=0;let i=setInterval(()=>{window.scrollTo(0,0);document.querySelectorAll('.main, [data-testid=&quot;stAppViewContainer&quot;]').forEach(el=>el.scrollTop=0);c++;if(c&gt;40)clearInterval(i);},50);}}catch(e){}this.remove();" style="display:none;">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
@@ -818,6 +817,21 @@ components.html("""
 <script>
     (function() {
         try {
+            // Reset parent scroll position to top if no URL hash anchor is loaded
+            if (window.parent && !window.parent.location.hash && !window.parent.waffle_loaded) {
+                window.parent.waffle_loaded = true;
+                let c = 0;
+                let i = setInterval(() => {
+                    try {
+                        window.parent.scrollTo(0, 0);
+                        const containers = window.parent.document.querySelectorAll('.main, [data-testid="stAppViewContainer"]');
+                        containers.forEach(el => el.scrollTop = 0);
+                    } catch (err) {}
+                    c++;
+                    if (c > 40) clearInterval(i);
+                }, 50);
+            }
+            
             const parentDoc = window.parent.document;
             let isHoveringDropdown = false;
             
