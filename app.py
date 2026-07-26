@@ -758,42 +758,42 @@ st.markdown("""
         /* Scale down the waffle grid cells to fit mobile viewports */
         /* Scale down the waffle grid cells to fit mobile viewports */
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
-            width: 20px !important;
-            min-width: 20px !important;
-            max-width: 20px !important;
-            flex: 0 0 20px !important;
+            width: 18px !important;
+            min-width: 18px !important;
+            max-width: 18px !important;
+            flex: 0 0 18px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox {
-            width: 20px !important;
-            height: 20px !important;
+            width: 18px !important;
+            height: 18px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
-            width: 20px !important;
-            height: 20px !important;
-            border-radius: 4px !important;
+            width: 18px !important;
+            height: 18px !important;
+            border-radius: 3.5px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
-            width: 20px !important;
-            height: 18px !important;
-            font-size: 0.85rem !important;
-            line-height: 18px !important;
+            width: 18px !important;
+            height: 16px !important;
+            font-size: 0.78rem !important;
+            line-height: 16px !important;
         }
         
         /* Set grid wrapper bounds for mobile */
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
-            max-width: 375px !important;
-            gap: 2.5px !important;
-            margin-bottom: 2.5px !important;
+            max-width: 330px !important;
+            gap: 2.2px !important;
+            margin-bottom: 2.2px !important;
         }
         
         div.phase-label-wrapper {
-            height: 20px !important;
+            height: 18px !important;
         }
         .phase-label {
-            font-size: 6.5px !important;
-            width: 16px !important;
-            height: 16px !important;
-            border-radius: 3px !important;
+            font-size: 6px !important;
+            width: 14px !important;
+            height: 14px !important;
+            border-radius: 2.5px !important;
         }
         
         /* Leaderboard Mobile Styling */
