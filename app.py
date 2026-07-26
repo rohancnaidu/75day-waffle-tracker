@@ -604,19 +604,36 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
     }
     .phase-row {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        border-bottom: 1px dashed rgba(0, 0, 0, 0.06) !important;
-        padding: 8px 0 !important;
+        display: block !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+        padding: 10px 0 !important;
     }
     .phase-row:last-child {
         border-bottom: none !important;
+        padding-bottom: 4px !important;
     }
-    .phase-meta {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
+    .phase-progress-container {
+        width: 100% !important;
+        margin-top: 6px !important;
+    }
+    .phase-progress-bar {
+        height: 6px !important;
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        border-radius: 3px !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    .phase-progress-fill {
+        height: 100% !important;
+        border-radius: 3px !important;
+        transition: width 0.3s ease !important;
+    }
+    .phase-progress-fill.met {
+        background-color: #0f766e !important; /* Teal */
+    }
+    .phase-progress-fill.missed {
+        background-color: #be123c !important; /* Rose */
     }
     .phase-badge {
         font-family: 'Space Grotesk', sans-serif !important;
@@ -775,17 +792,6 @@ st.markdown("""
         .phase-card {
             padding: 10px 14px !important;
             margin-bottom: 0.8rem !important;
-        }
-        .phase-row {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 6px !important;
-            padding: 10px 0 !important;
-        }
-        .phase-meta {
-            width: 100% !important;
-            justify-content: space-between !important;
-            gap: 8px !important;
         }
     }
 </style>
@@ -1317,18 +1323,25 @@ with tab_phases:
                         do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
                         badge_class = "met" if met else "missed"
                         badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Achieved ({pct:.1f}%)"
+                        pct_clamped = min(100.0, pct)
                         
                         # Phase label
                         p_label = f"Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
                         
                         st.markdown(f"""
                         <div class="phase-row">
-                            <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #37352f;">{p_label}</span>
-                            <div class="phase-meta">
-                                <span style="font-size: 0.8rem; color: #57534e;">
-                                    🟢 {do_done}/15 | 🔴 {drop_done}/15 | ⚡ {total_done}/30
-                                </span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{p_label}</span>
                                 <span class="phase-badge {badge_class}">{badge_text}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
+                                <span>🟢 {do_done}d · 🔴 {drop_done}d · ⚡ {total_done}d</span>
+                                <span style="font-weight: 600;">{pct:.1f}% achieved</span>
+                            </div>
+                            <div class="phase-progress-container">
+                                <div class="phase-progress-bar">
+                                    <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
+                                </div>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
@@ -1368,15 +1381,22 @@ with tab_phases:
                         avatar = get_member_avatar(item["Member"])
                         badge_class = "met" if item["Met"] else "missed"
                         badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Achieved ({item['Pct']:.1f}%)"
+                        pct_clamped = min(100.0, item['Pct'])
                         
                         st.markdown(f"""
                         <div class="phase-row">
-                            <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #37352f;">{avatar} {item['Member']}</span>
-                            <div class="phase-meta">
-                                <span style="font-size: 0.8rem; color: #57534e;">
-                                    🟢 {item['Do']}/15 | 🔴 {item['Drop']}/15 | ⚡ {item['Total']}/30
-                                </span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{avatar} {item['Member']}</span>
                                 <span class="phase-badge {badge_class}">{badge_text}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
+                                <span>🟢 {item['Do']}d · 🔴 {item['Drop']}d · ⚡ {item['Total']}d</span>
+                                <span style="font-weight: 600;">{item['Pct']:.1f}% achieved</span>
+                            </div>
+                            <div class="phase-progress-container">
+                                <div class="phase-progress-bar">
+                                    <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
+                                </div>
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
