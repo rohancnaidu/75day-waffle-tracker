@@ -916,7 +916,7 @@ components.html("""
                             grid.dataset.hoverBound = "true";
                             
                             if (dayNum) {
-                                const container = grid;
+                                const container = input.parentElement;
                                 if (container && !container.querySelector('.waffle-watermark')) {
                                     const watermark = parentDoc.createElement('span');
                                     watermark.className = 'waffle-watermark';
