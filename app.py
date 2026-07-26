@@ -452,8 +452,8 @@ st.markdown("""
     }
     
     /* Hide watermark when cell is checked */
-    div[role="group"]:has(input[value="✅"]) .waffle-watermark,
-    div[role="group"]:has(input[value="❌"]) .waffle-watermark {
+    div.stSelectbox:has(input[value="✅"]) .waffle-watermark,
+    div.stSelectbox:has(input[value="❌"]) .waffle-watermark {
         opacity: 0 !important;
     }
     /* Notion Page Link Index Styling */
@@ -916,7 +916,7 @@ components.html("""
                             grid.dataset.hoverBound = "true";
                             
                             if (dayNum) {
-                                const container = grid.querySelector('div[role="group"]') || grid;
+                                const container = grid;
                                 if (container && !container.querySelector('.waffle-watermark')) {
                                     const watermark = parentDoc.createElement('span');
                                     watermark.className = 'waffle-watermark';
