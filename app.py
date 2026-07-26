@@ -145,7 +145,7 @@ st.markdown("""
     }
     
     /* Style only the nested waffle columns to be exactly 28px wide to prevent deforming */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
+    div[data-testid="stTabPanel"] div[data-testid="stHorizontalBlock"]:has(div.stSelectbox) > div[data-testid="stColumn"] {
         width: 28px !important;
         min-width: 28px !important;
         max-width: 28px !important;
@@ -153,7 +153,7 @@ st.markdown("""
     }
     
     /* Style only waffle grid selectbox containers */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox {
+    div[data-testid="stTabPanel"] div.stSelectbox {
         width: 28px !important;
         height: 28px !important;
         padding: 0 !important;
@@ -161,12 +161,12 @@ st.markdown("""
     }
     
     /* Hide the selectbox label to maximize grid alignment */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox label {
+    div[data-testid="stTabPanel"] div.stSelectbox label {
         display: none !important;
     }
     
     /* Default group styling for waffle cells */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"] {
         width: 28px !important;
         height: 28px !important;
         border-radius: 6px !important;
@@ -181,36 +181,36 @@ st.markdown("""
     }
     
     /* Hover transitions: translation and glow shadow */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:hover {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:hover {
         transform: translateY(-2px) scale(1.08) !important;
         border-color: rgba(0, 0, 0, 0.3) !important;
         cursor: pointer !important;
     }
     
     /* Green status cell: Done */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]) {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="✅"]) {
         background-color: rgba(16, 185, 129, 0.08) !important;
         border: 1.5px solid #10b981 !important;
         box-shadow: 0 2px 6px rgba(16, 185, 129, 0.12) !important;
     }
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="✅"]):hover {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="✅"]):hover {
         border-color: #059669 !important;
         box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25) !important;
     }
     
     /* Red status cell: Failed */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]) {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="❌"]) {
         background-color: rgba(239, 68, 68, 0.06) !important;
         border: 1.5px solid #ef4444 !important;
         box-shadow: 0 2px 6px rgba(239, 68, 68, 0.08) !important;
     }
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="❌"]):hover {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="❌"]):hover {
         border-color: #dc2626 !important;
         box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2) !important;
     }
     
     /* Style the input inside the waffle cell */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
+    div[data-testid="stTabPanel"] div.stSelectbox input {
         width: 28px !important;
         height: 26px !important;
         background-color: transparent !important;
@@ -225,12 +225,12 @@ st.markdown("""
     }
     
     /* Hide the ⬜ emoji text in empty cells to reveal a clean dashed slot background */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"]:has(input[value="⬜"]) input {
+    div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="⬜"]) input {
         color: transparent !important;
     }
     
     /* Hide the default dropdown SVG arrow/button inside the grid cell */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox button {
+    div[data-testid="stTabPanel"] div.stSelectbox button {
         display: none !important;
         width: 0px !important;
         height: 0px !important;
@@ -729,22 +729,23 @@ st.markdown("""
         }
         
         /* Scale down the waffle grid cells to fit mobile viewports */
-        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
+        /* Scale down the waffle grid cells to fit mobile viewports */
+        div[data-testid="stTabPanel"] div[data-testid="stHorizontalBlock"]:has(div.stSelectbox) > div[data-testid="stColumn"] {
             width: 20px !important;
             min-width: 20px !important;
             max-width: 20px !important;
             flex: 0 0 20px !important;
         }
-        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox {
+        div[data-testid="stTabPanel"] div.stSelectbox {
             width: 20px !important;
             height: 20px !important;
         }
-        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
+        div[data-testid="stTabPanel"] div.stSelectbox div[role="group"] {
             width: 20px !important;
             height: 20px !important;
             border-radius: 4px !important;
         }
-        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
+        div[data-testid="stTabPanel"] div.stSelectbox input {
             width: 20px !important;
             height: 18px !important;
             font-size: 0.85rem !important;
@@ -752,7 +753,7 @@ st.markdown("""
         }
         
         /* Set grid wrapper bounds for mobile */
-        div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
+        div[data-testid="stTabPanel"] div[data-testid="stHorizontalBlock"]:has(div.stSelectbox) {
             max-width: 350px !important;
             gap: 2.5px !important;
             margin-bottom: 2.5px !important;
