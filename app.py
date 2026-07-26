@@ -227,6 +227,7 @@ st.markdown("""
     /* Hide the ⬜ emoji text in empty cells to reveal a clean dashed slot background */
     div[data-testid="stTabPanel"] div.stSelectbox div[role="group"]:has(input[value="⬜"]) input {
         color: transparent !important;
+        -webkit-text-fill-color: transparent !important;
     }
     
     /* Hide the default dropdown SVG arrow/button inside the grid cell */
@@ -442,7 +443,8 @@ st.markdown("""
         position: absolute !important;
         font-size: 8px !important;
         font-weight: 600 !important;
-        color: rgba(0, 0, 0, 0.22) !important;
+        color: rgba(0, 0, 0, 0.35) !important;
+        -webkit-text-fill-color: rgba(0, 0, 0, 0.35) !important;
         pointer-events: none !important;
         bottom: 2px !important;
         right: 3px !important;
