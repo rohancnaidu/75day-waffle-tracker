@@ -1316,106 +1316,107 @@ with tab_phases:
         
         st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
         
-        if view_mode == "📊 View by Participant":
-            col_p1, col_p2 = st.columns(2, gap="large")
-            for idx, member in enumerate(members_list):
-                member_rows = df[df["Member"] == member]
-                avatar = get_member_avatar(member)
+        # Helper to render a single participant card
+        def render_participant_card(member):
+            member_rows = df[df["Member"] == member]
+            avatar = get_member_avatar(member)
+            st.markdown(f"""
+            <div class="phase-card">
+                <h4 class="phase-card-title">
+                    <span>{avatar}</span> <span>{member}'s Phases</span>
+                </h4>
+            """, unsafe_allow_html=True)
+            
+            for phase in range(1, 6):
+                do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
+                badge_class = "met" if met else "missed"
+                badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Achieved ({pct:.1f}%)"
+                pct_clamped = min(100.0, pct)
+                p_label = f"Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
                 
-                # Render half on left column, half on right column
-                target_col = col_p1 if idx % 2 == 0 else col_p2
-                
-                with target_col:
-                    st.markdown(f"""
-                    <div class="phase-card">
-                        <h4 class="phase-card-title">
-                            <span>{avatar}</span> <span>{member}'s Phases</span>
-                        </h4>
-                    """, unsafe_allow_html=True)
-                    
-                    for phase in range(1, 6):
-                        do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
-                        badge_class = "met" if met else "missed"
-                        badge_text = f"🎉 Met ({pct:.1f}%)" if met else f"⚠️ Achieved ({pct:.1f}%)"
-                        pct_clamped = min(100.0, pct)
-                        
-                        # Phase label
-                        p_label = f"Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
-                        
-                        st.markdown(f"""
-                        <div class="phase-row">
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{p_label}</span>
-                                <span class="phase-badge {badge_class}">{badge_text}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
-                                <span>🟢 {do_done}d · 🔴 {drop_done}d · ⚡ {total_done}d</span>
-                                <span style="font-weight: 600;">{pct:.1f}% achieved</span>
-                            </div>
-                            <div class="phase-progress-container">
-                                <div class="phase-progress-bar">
-                                    <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
-                                </div>
-                            </div>
+                st.markdown(f"""
+                <div class="phase-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{p_label}</span>
+                        <span class="phase-badge {badge_class}">{badge_text}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
+                        <span>🟢 {do_done}d · 🔴 {drop_done}d · ⚡ {total_done}d</span>
+                        <span style="font-weight: 600;">{pct:.1f}% achieved</span>
+                    </div>
+                    <div class="phase-progress-container">
+                        <div class="phase-progress-bar">
+                            <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
                         </div>
-                        """, unsafe_allow_html=True)
-                        
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # Helper to render a single phase card
+        def render_phase_card(phase):
+            p_label = f"Mini-Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
+            st.markdown(f"""
+            <div class="phase-card">
+                <h4 class="phase-card-title">🎯 {p_label}</h4>
+            """, unsafe_allow_html=True)
+            
+            phase_rankings = []
+            for member in members_list:
+                member_rows = df[df["Member"] == member]
+                do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
+                phase_rankings.append({
+                    "Member": member,
+                    "Do": do_done,
+                    "Drop": drop_done,
+                    "Total": total_done,
+                    "Pct": pct,
+                    "Met": met
+                })
+            phase_rankings = sorted(phase_rankings, key=lambda x: x["Pct"], reverse=True)
+            
+            for item in phase_rankings:
+                avatar = get_member_avatar(item["Member"])
+                badge_class = "met" if item["Met"] else "missed"
+                badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Achieved ({item['Pct']:.1f}%)"
+                pct_clamped = min(100.0, item['Pct'])
+                
+                st.markdown(f"""
+                <div class="phase-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{avatar} {item['Member']}</span>
+                        <span class="phase-badge {badge_class}">{badge_text}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
+                        <span>🟢 {item['Do']}d · 🔴 {item['Drop']}d · ⚡ {item['Total']}d</span>
+                        <span style="font-weight: 600;">{item['Pct']:.1f}% achieved</span>
+                    </div>
+                    <div class="phase-progress-container">
+                        <div class="phase-progress-bar">
+                            <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        if view_mode == "📊 View by Participant":
+            for idx in range(0, len(members_list), 2):
+                col1, col2 = st.columns(2, gap="large")
+                with col1:
+                    render_participant_card(members_list[idx])
+                if idx + 1 < len(members_list):
+                    with col2:
+                        render_participant_card(members_list[idx + 1])
                     
         else: # View by Mini-Phase
-            col_ph1, col_ph2 = st.columns(2, gap="large")
-            for phase in range(1, 6):
-                target_col = col_ph1 if phase in [1, 3, 5] else col_ph2
-                p_label = f"Mini-Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
-                
-                with target_col:
-                    st.markdown(f"""
-                    <div class="phase-card">
-                        <h4 class="phase-card-title">🎯 {p_label}</h4>
-                    """, unsafe_allow_html=True)
-                    
-                    # Calculate for all members and sort by percentage descending
-                    phase_rankings = []
-                    for member in members_list:
-                        member_rows = df[df["Member"] == member]
-                        do_done, drop_done, total_done, pct, met = compute_phase_stats(member_rows, phase)
-                        phase_rankings.append({
-                            "Member": member,
-                            "Do": do_done,
-                            "Drop": drop_done,
-                            "Total": total_done,
-                            "Pct": pct,
-                            "Met": met
-                        })
-                    
-                    # Sort rankings descending by completion percentage
-                    phase_rankings = sorted(phase_rankings, key=lambda x: x["Pct"], reverse=True)
-                    
-                    for item in phase_rankings:
-                        avatar = get_member_avatar(item["Member"])
-                        badge_class = "met" if item["Met"] else "missed"
-                        badge_text = f"🎉 Met ({item['Pct']:.1f}%)" if item["Met"] else f"⚠️ Achieved ({item['Pct']:.1f}%)"
-                        pct_clamped = min(100.0, item['Pct'])
-                        
-                        st.markdown(f"""
-                        <div class="phase-row">
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                <span style="font-family: Space Grotesk, sans-serif; font-weight: 600; font-size: 0.88rem; color: #1c1917;">{avatar} {item['Member']}</span>
-                                <span class="phase-badge {badge_class}">{badge_text}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 3px; font-size: 0.78rem; color: #57534e;">
-                                <span>🟢 {item['Do']}d · 🔴 {item['Drop']}d · ⚡ {item['Total']}d</span>
-                                <span style="font-weight: 600;">{item['Pct']:.1f}% achieved</span>
-                            </div>
-                            <div class="phase-progress-container">
-                                <div class="phase-progress-bar">
-                                    <div class="phase-progress-fill {badge_class}" style="width: {pct_clamped:.1f}%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                    st.markdown("</div>", unsafe_allow_html=True)
+            for phase in range(1, 6, 2):
+                col1, col2 = st.columns(2, gap="large")
+                with col1:
+                    render_phase_card(phase)
+                if phase + 1 <= 5:
+                    with col2:
+                        render_phase_card(phase + 1)
 
 with tab_leaderboard:
     # Gather leaderboard data
