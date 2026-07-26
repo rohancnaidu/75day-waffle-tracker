@@ -952,9 +952,12 @@ components.html("""
                 });
             }
             
+            // Run immediately and register observer for dynamic loading/tab switching
             setupHoverListeners();
-            setTimeout(setupHoverListeners, 300);
-            setTimeout(setupHoverListeners, 1000);
+            const observer = new MutationObserver(() => {
+                setupHoverListeners();
+            });
+            observer.observe(parentDoc.body, { childList: true, subtree: true });
             
             parentDoc.addEventListener('scroll', function() {
                 const activeInput = parentDoc.activeElement;
