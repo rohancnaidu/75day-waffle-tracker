@@ -1250,6 +1250,12 @@ def get_member_avatar(member_name):
         "harshit": "🧙‍♂️",
         "rashmi": "🦸‍♀️",
         "ullas": "🥷",
+        "abhishek": "🏄‍♂️",
+        "kartikeya": "🧗‍♂️",
+        "kriti": "🧘‍♀️",
+        "prince": "🤴",
+        "snehita": "👩‍🎨",
+        "vacha": "💃",
         "rohit": "🏃‍♂️",
         "sarah": "🏃‍♀️",
         "alex": "🧗‍♂️"
