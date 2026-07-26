@@ -751,49 +751,50 @@ st.markdown("""
         
         /* Adjust card padding to save screen space */
         div[data-testid="stVerticalBlockBorderEffect"] {
-            padding: 0.9rem !important;
+            padding: 12px !important;
             border-radius: 16px !important;
         }
         
         /* Scale down the waffle grid cells to fit mobile viewports */
-        /* Scale down the waffle grid cells to fit mobile viewports */
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) > div[data-testid="stColumn"] {
-            width: 18px !important;
-            min-width: 18px !important;
-            max-width: 18px !important;
-            flex: 0 0 18px !important;
+            flex: 1 1 0% !important;
+            min-width: 0px !important;
+            max-width: none !important;
+            width: auto !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox {
-            width: 18px !important;
-            height: 18px !important;
+            width: 100% !important;
+            height: 20px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox div[role="group"] {
-            width: 18px !important;
-            height: 18px !important;
-            border-radius: 3.5px !important;
+            width: 100% !important;
+            height: 20px !important;
+            border-radius: 4px !important;
         }
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) div.stSelectbox input {
-            width: 18px !important;
-            height: 16px !important;
-            font-size: 0.78rem !important;
-            line-height: 16px !important;
+            width: 100% !important;
+            height: 18px !important;
+            font-size: 0.8rem !important;
+            line-height: 18px !important;
         }
         
         /* Set grid wrapper bounds for mobile */
         div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(15)) {
-            max-width: 330px !important;
-            gap: 2.2px !important;
-            margin-bottom: 2.2px !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            gap: 2px !important;
+            margin-bottom: 2px !important;
         }
         
         div.phase-label-wrapper {
-            height: 18px !important;
+            width: 100% !important;
+            height: 20px !important;
         }
         .phase-label {
-            font-size: 6px !important;
-            width: 14px !important;
-            height: 14px !important;
-            border-radius: 2.5px !important;
+            font-size: 7px !important;
+            width: 100% !important;
+            height: 16px !important;
+            border-radius: 3px !important;
         }
         
         /* Leaderboard Mobile Styling */
