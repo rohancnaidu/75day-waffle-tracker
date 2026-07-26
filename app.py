@@ -14,7 +14,7 @@ st.set_page_config(
 # Premium dark theme styling with HSL tailored gradients, Inter/Outfit typography,
 # glassmorphism, and responsive waffle grid adjustments.
 st.markdown("""
-<img src="x" onerror="try{if(!window.waffle_loaded){window.scrollTo(0,0);document.querySelectorAll('.main, [data-testid=&quot;stAppViewContainer&quot;]').forEach(el=>el.scrollTop=0);window.waffle_loaded=true;}}catch(e){}this.remove();" style="display:none;">
+<img src="x" onerror="try{if(!window.waffle_loaded){window.waffle_loaded=true;let c=0;let i=setInterval(()=>{window.scrollTo(0,0);document.querySelectorAll('.main, [data-testid=&quot;stAppViewContainer&quot;]').forEach(el=>el.scrollTop=0);c++;if(c&gt;40)clearInterval(i);},50);}}catch(e){}this.remove();" style="display:none;">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
     
