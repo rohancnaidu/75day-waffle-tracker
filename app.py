@@ -1545,6 +1545,16 @@ with tab_phases:
     else:
         members_list = sorted(df["Member"].unique())
         
+        # Determine the current day of the challenge dynamically by finding the highest day index with inputs
+        current_day = 1
+        for d in range(75, 0, -1):
+            col = f"Day {d}"
+            if col in df.columns:
+                if df[col].astype(str).str.strip().str.lower().isin(["done", "failed", "✅", "❌"]).any():
+                    current_day = d
+                    break
+        current_phase = ((current_day - 1) // 15) + 1
+        
         # Helper function for mini-phase calculations
         def compute_phase_stats(member_rows, phase_num):
             if not member_rows.empty:
@@ -1631,12 +1641,17 @@ with tab_phases:
             st.markdown("</div>", unsafe_allow_html=True)
 
         # Helper to render a single phase card
-        def render_phase_card(phase):
+        def render_phase_card(phase, show_title=True):
             p_label = f"Mini-Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
-            st.markdown(f"""
-            <div class="phase-card">
-                <h4 class="phase-card-title">🎯 {p_label}</h4>
-            """, unsafe_allow_html=True)
+            if show_title:
+                st.markdown(f"""
+                <div class="phase-card">
+                    <h4 class="phase-card-title">🎯 {p_label}</h4>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="phase-card" style="margin-top: 0; border: none; box-shadow: none; background: transparent; padding: 0;">
+                """, unsafe_allow_html=True)
             
             phase_rankings = []
             for member in members_list:
@@ -1687,13 +1702,18 @@ with tab_phases:
                         render_participant_card(members_list[idx + 1])
                     
         else: # View by Mini-Phase
-            for phase in range(1, 6, 2):
-                col1, col2 = st.columns(2, gap="large")
-                with col1:
-                    render_phase_card(phase)
-                if phase + 1 <= 5:
-                    with col2:
-                        render_phase_card(phase + 1)
+            # Renders each of the 5 phases in a collapsible expander.
+            # The current phase is open (expanded=True), all others are collapsed (expanded=False).
+            for phase in range(1, 6):
+                is_current = (phase == current_phase)
+                p_label = f"Mini-Phase {phase} (Days { (phase-1)*15 + 1 }-{ phase*15 })"
+                if is_current:
+                    p_label = f"🎯 {p_label} ⚡ [CURRENT PHASE]"
+                else:
+                    p_label = f"🎯 {p_label}"
+                
+                with st.expander(p_label, expanded=is_current):
+                    render_phase_card(phase, show_title=False)
 
 with tab_leaderboard:
     # Gather leaderboard data
