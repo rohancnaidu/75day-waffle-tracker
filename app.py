@@ -1088,7 +1088,8 @@ if not os.path.exists(LOCAL_FILE):
         df.to_csv(LOCAL_FILE, index=False)
         st.toast("🔄 Loaded latest progress from Google Sheet!", icon="🔄")
     except Exception as e:
-        df = init_mock_data()
+        st.error(f"⚠️ Failed to sync tracker from Google Sheets: {e}")
+        df = pd.DataFrame(columns=["Member", "HabitType"] + [f"Day {i}" for i in range(1, 76)])
 else:
     df = pd.read_csv(LOCAL_FILE)
     df = clean_dataframe(df)
@@ -1101,6 +1102,7 @@ if not os.path.exists(MISSIONS_FILE):
         missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
         missions_df.to_csv(MISSIONS_FILE, index=False)
     except Exception as e:
+        st.error(f"⚠️ Failed to sync missions: {e}")
         missions_df = pd.DataFrame(columns=["Name", "Mission"])
 else:
     missions_df = pd.read_csv(MISSIONS_FILE)
