@@ -1079,57 +1079,49 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-x
 MISSIONS_FILE = "missions.csv"
 MISSIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv&gid=718170288"
 
-# Caching dataframes in st.session_state to avoid disk I/O on page reruns
-if "df" not in st.session_state or "missions_df" not in st.session_state:
-    # Auto-sync from Google Sheets on initial page load / browser refresh
-    if "has_synced" not in st.session_state:
-        st.session_state["has_synced"] = True
-        
-        # Sync main waffle tracker data
-        try:
-            df = pd.read_csv(CSV_URL)
-            df = clean_dataframe(df)
-            df.to_csv(LOCAL_FILE, index=False)
-            st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
-        except Exception as e:
-            st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
-            if os.path.exists(LOCAL_FILE):
-                df = pd.read_csv(LOCAL_FILE)
-                df = clean_dataframe(df)
-            else:
-                df = init_mock_data()
-                
-        # Sync missions data
-        try:
-            missions_df = pd.read_csv(MISSIONS_CSV_URL)
-            missions_df.columns = [c.strip() for c in missions_df.columns]
-            missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
-            missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
-            missions_df.to_csv(MISSIONS_FILE, index=False)
-        except Exception as e:
-            if os.path.exists(MISSIONS_FILE):
-                missions_df = pd.read_csv(MISSIONS_FILE)
-            else:
-                missions_df = pd.DataFrame(columns=["Name", "Mission"])
-    else:
-        # Read main waffle tracker data
+# Auto-sync from Google Sheets on initial page load / browser refresh
+if "has_synced" not in st.session_state:
+    st.session_state["has_synced"] = True
+    
+    # Sync main waffle tracker data
+    try:
+        df = pd.read_csv(CSV_URL)
+        df = clean_dataframe(df)
+        df.to_csv(LOCAL_FILE, index=False)
+        st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
+    except Exception as e:
+        st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
         if os.path.exists(LOCAL_FILE):
             df = pd.read_csv(LOCAL_FILE)
             df = clean_dataframe(df)
         else:
             df = init_mock_data()
             
-        # Read missions data
+    # Sync missions data
+    try:
+        missions_df = pd.read_csv(MISSIONS_CSV_URL)
+        missions_df.columns = [c.strip() for c in missions_df.columns]
+        missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
+        missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
+        missions_df.to_csv(MISSIONS_FILE, index=False)
+    except Exception as e:
         if os.path.exists(MISSIONS_FILE):
             missions_df = pd.read_csv(MISSIONS_FILE)
         else:
             missions_df = pd.DataFrame(columns=["Name", "Mission"])
-            
-    st.session_state["df"] = df
-    st.session_state["missions_df"] = missions_df
 else:
-    df = st.session_state["df"]
-    missions_df = st.session_state["missions_df"]
+    # Read main waffle tracker data from disk on every rerun for real-time multi-user updates
+    if os.path.exists(LOCAL_FILE):
+        df = pd.read_csv(LOCAL_FILE)
+        df = clean_dataframe(df)
+    else:
+        df = init_mock_data()
+        
+    # Read missions data
+    if os.path.exists(MISSIONS_FILE):
+        missions_df = pd.read_csv(MISSIONS_FILE)
+    else:
+        missions_df = pd.DataFrame(columns=["Name", "Mission"])
 
 # Check if Streamlit GSheets secrets are configured
 def is_gsheets_configured():
@@ -1195,41 +1187,43 @@ def run_cloud_sync_in_background(df_to_save, gscript_url):
         import logging
         logging.error(f"Background cloud sync failed: {e}")
 
-def save_and_sync():
+def save_and_sync(member, habit_type, day_num):
     try:
-        # Load the latest local copy to update
+        key = f"{member}_{habit_type}_{day_num}"
+        if key not in st.session_state:
+            return
+        new_val = st.session_state[key]
+        
+        # Load the latest copy from the shared local file
         df_to_update = pd.read_csv(LOCAL_FILE)
         df_to_update = clean_dataframe(df_to_update)
         
         reverse_map = {"⬜": "", "✅": "Done", "❌": "Failed"}
-        members_list = df_to_update["Member"].unique() if not df_to_update.empty else []
-        for m in members_list:
-            for habit in ["Do", "Drop"]:
-                match = df_to_update[(df_to_update["Member"] == m) & (df_to_update["HabitType"].str.lower().str.startswith(habit.lower()))]
-                if not match.empty:
-                    idx = match.index[0]
-                    for day_num in range(1, 76):
-                        key = f"{m}_{habit}_{day_num}"
-                        if key in st.session_state:
-                            val = st.session_state[key]
-                            df_to_update.at[idx, f"Day {day_num}"] = reverse_map.get(val, "")
+        db_val = reverse_map.get(new_val, "")
         
-        df_to_update.to_csv(LOCAL_FILE, index=False)
-        st.session_state["df"] = df_to_update
-        st.toast("Progress saved locally & syncing to cloud...", icon="💾")
-        
-        # Dispatch cloud sync to background thread to prevent UI freezing
-        gscript_url = st.session_state.get("gscript_url", "").strip()
-        df_to_save = df_to_update.rename(columns={"Member": "Name"}).fillna("")
-        
-        if gscript_url or is_gsheets_configured():
-            thread = threading.Thread(
-                target=run_cloud_sync_in_background,
-                args=(df_to_save, gscript_url)
-            )
-            thread.daemon = True
-            thread.start()
+        # Locate the specific row
+        match = df_to_update[(df_to_update["Member"] == member) & (df_to_update["HabitType"].str.lower().str.startswith(habit_type.lower()))]
+        if not match.empty:
+            idx = match.index[0]
+            df_to_update.at[idx, f"Day {day_num}"] = db_val
             
+            # Save back immediately to local file
+            df_to_update.to_csv(LOCAL_FILE, index=False)
+            
+            st.toast(f"Saved Day {day_num} for {member}!", icon="💾")
+            
+            # Dispatch cloud sync to background thread
+            gscript_url = st.session_state.get("gscript_url", "").strip()
+            df_to_save = df_to_update.rename(columns={"Member": "Name"}).fillna("")
+            
+            if gscript_url or is_gsheets_configured():
+                thread = threading.Thread(
+                    target=run_cloud_sync_in_background,
+                    args=(df_to_save, gscript_url)
+                )
+                thread.daemon = True
+                thread.start()
+                
     except Exception as e:
         st.error(f"Failed to auto-save: {e}")
 
@@ -1500,7 +1494,8 @@ def render_waffle(member, member_rows, habit_type, title, emoji_prefix, stats_do
                     index=["⬜", "✅", "❌"].index(default_emoji),
                     key=f"{member}_{habit_type}_{day_num}",
                     label_visibility="collapsed",
-                    on_change=save_and_sync
+                    on_change=save_and_sync,
+                    args=(member, habit_type, day_num)
                 )
 
 # ----------------- TABS SETUP -----------------
