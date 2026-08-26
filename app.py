@@ -1079,25 +1079,21 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-x
 MISSIONS_FILE = "missions.csv"
 MISSIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv&gid=718170288"
 
-# Auto-sync from Google Sheets on initial page load / browser refresh
-if "has_synced" not in st.session_state:
-    st.session_state["has_synced"] = True
-    
-    # Sync main waffle tracker data
+# Load data from local files first. Only fetch from Google Sheets if local files are missing (e.g. server restart)
+# This prevents browser refreshes from pulling stale Google Sheets state and overwriting recent local edits.
+if not os.path.exists(LOCAL_FILE):
     try:
         df = pd.read_csv(CSV_URL)
         df = clean_dataframe(df)
         df.to_csv(LOCAL_FILE, index=False)
-        st.toast("🔄 Auto-synced latest progress from Google Sheet!", icon="🔄")
+        st.toast("🔄 Loaded latest progress from Google Sheet!", icon="🔄")
     except Exception as e:
-        st.toast(f"⚠️ Failed to auto-sync from Sheet: {e}", icon="⚠️")
-        if os.path.exists(LOCAL_FILE):
-            df = pd.read_csv(LOCAL_FILE)
-            df = clean_dataframe(df)
-        else:
-            df = init_mock_data()
-            
-    # Sync missions data
+        df = init_mock_data()
+else:
+    df = pd.read_csv(LOCAL_FILE)
+    df = clean_dataframe(df)
+
+if not os.path.exists(MISSIONS_FILE):
     try:
         missions_df = pd.read_csv(MISSIONS_CSV_URL)
         missions_df.columns = [c.strip() for c in missions_df.columns]
@@ -1105,23 +1101,9 @@ if "has_synced" not in st.session_state:
         missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
         missions_df.to_csv(MISSIONS_FILE, index=False)
     except Exception as e:
-        if os.path.exists(MISSIONS_FILE):
-            missions_df = pd.read_csv(MISSIONS_FILE)
-        else:
-            missions_df = pd.DataFrame(columns=["Name", "Mission"])
-else:
-    # Read main waffle tracker data from disk on every rerun for real-time multi-user updates
-    if os.path.exists(LOCAL_FILE):
-        df = pd.read_csv(LOCAL_FILE)
-        df = clean_dataframe(df)
-    else:
-        df = init_mock_data()
-        
-    # Read missions data
-    if os.path.exists(MISSIONS_FILE):
-        missions_df = pd.read_csv(MISSIONS_FILE)
-    else:
         missions_df = pd.DataFrame(columns=["Name", "Mission"])
+else:
+    missions_df = pd.read_csv(MISSIONS_FILE)
 
 # Check if Streamlit GSheets secrets are configured
 def is_gsheets_configured():
