@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
+import threading
 
 # Process-global dictionary to track background sync errors across user sessions
 sync_errors = {}
