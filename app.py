@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import os
 
+# Process-global dictionary to track background sync errors across user sessions
+sync_errors = {}
+
 # ----------------- PAGE CONFIG & STYLING -----------------
 st.set_page_config(
     page_title="75-Day Transformation | Phase 3, 2026",
@@ -1142,11 +1145,11 @@ if "gscript_url" not in st.session_state:
     else:
         st.session_state["gscript_url"] = ""
 
-# ----------------- AUTO-SAVE SYNCHRONIZATION -----------------
-import threading
-
-def run_cloud_sync_in_background(df_to_save, gscript_url):
+# ----------------- AUTO-SAVE SYNCdef run_cloud_sync_in_background(df_to_save, gscript_url, session_id):
     try:
+        # Reset error state for this session on start
+        sync_errors[session_id] = ""
+        
         if gscript_url:
             import requests
             import json
@@ -1154,12 +1157,17 @@ def run_cloud_sync_in_background(df_to_save, gscript_url):
                 "headers": df_to_save.columns.tolist(),
                 "rows": df_to_save.values.tolist()
             }
-            requests.post(
+            res = requests.post(
                 gscript_url,
                 data=json.dumps(payload),
                 headers={"Content-Type": "application/json"},
                 timeout=25
             )
+            # Detect 403 Forbidden redirects to Google Accounts page due to bad Apps Script permissions settings
+            if "accounts.google.com" in res.url or "You need access" in res.text or res.status_code == 403:
+                sync_errors[session_id] = "⚠️ Google Sheets Auto-Sync Permission Error: Please redeploy your Apps Script as a Web App and configure 'Who has access' to 'Anyone' (not 'Only myself' or 'Anyone with a Google account')."
+            elif res.status_code != 200:
+                sync_errors[session_id] = f"⚠️ Google Sheets Auto-Sync failed: HTTP {res.status_code} - {res.text[:100]}"
         elif is_gsheets_configured():
             from streamlit_gsheets import GSheetsConnection
             conn = st.connection("gsheets", type=GSheetsConnection)
@@ -1170,6 +1178,7 @@ def run_cloud_sync_in_background(df_to_save, gscript_url):
     except Exception as e:
         import logging
         logging.error(f"Background cloud sync failed: {e}")
+        sync_errors[session_id] = f"⚠️ Google Sheets Auto-Sync failed: {e}"
 
 def save_and_sync(member, habit_type, day_num):
     try:
@@ -1196,6 +1205,11 @@ def save_and_sync(member, habit_type, day_num):
             
             st.toast(f"Saved Day {day_num} for {member}!", icon="💾")
             
+            # Get session ID for background error tracking
+            from streamlit.runtime.scriptrunner import get_script_run_ctx
+            ctx = get_script_run_ctx()
+            session_id = ctx.session_id if ctx else "global"
+            
             # Dispatch cloud sync to background thread
             gscript_url = st.session_state.get("gscript_url", "").strip()
             df_to_save = df_to_update.rename(columns={"Member": "Name"}).fillna("")
@@ -1203,7 +1217,7 @@ def save_and_sync(member, habit_type, day_num):
             if gscript_url or is_gsheets_configured():
                 thread = threading.Thread(
                     target=run_cloud_sync_in_background,
-                    args=(df_to_save, gscript_url)
+                    args=(df_to_save, gscript_url, session_id)
                 )
                 thread.daemon = True
                 thread.start()
@@ -1212,6 +1226,13 @@ def save_and_sync(member, habit_type, day_num):
         st.error(f"Failed to auto-save: {e}")
 
 # Main page action buttons (Save button removed, auto-save active)
+# Check and display background sync errors if present for this session
+from streamlit.runtime.scriptrunner import get_script_run_ctx
+ctx = get_script_run_ctx()
+session_id = ctx.session_id if ctx else "global"
+if "sync_errors" in globals() and sync_errors.get(session_id):
+    st.error(sync_errors[session_id])
+
 with st.container(border=True):
     col_sync, col_status = st.columns([2.5, 9.5])
     
