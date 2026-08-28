@@ -1145,7 +1145,8 @@ if "gscript_url" not in st.session_state:
     else:
         st.session_state["gscript_url"] = ""
 
-# ----------------- AUTO-SAVE SYNCdef run_cloud_sync_in_background(df_to_save, gscript_url, session_id):
+# ----------------- AUTO-SAVE SYNC -----------------
+def run_cloud_sync_in_background(df_to_save, gscript_url, session_id):
     try:
         # Reset error state for this session on start
         sync_errors[session_id] = ""
