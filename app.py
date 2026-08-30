@@ -6,6 +6,7 @@ import threading
 
 # Process-global dictionary to track background sync errors across user sessions
 sync_errors = {}
+db_lock = threading.Lock()
 
 # ----------------- PAGE CONFIG & STYLING -----------------
 st.set_page_config(
@@ -1083,33 +1084,41 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-x
 MISSIONS_FILE = "missions.csv"
 MISSIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/1PGNxcmcZtpG3XtnPyynBacZbMRX-xS1bjLlLR0QJmm4/export?format=csv&gid=718170288"
 
-# Load data from local files first. Only fetch from Google Sheets if local files are missing (e.g. server restart)
-# This prevents browser refreshes from pulling stale Google Sheets state and overwriting recent local edits.
-if not os.path.exists(LOCAL_FILE):
-    try:
-        df = pd.read_csv(CSV_URL)
-        df = clean_dataframe(df)
-        df.to_csv(LOCAL_FILE, index=False)
-        st.toast("🔄 Loaded latest progress from Google Sheet!", icon="🔄")
-    except Exception as e:
-        st.error(f"⚠️ Failed to sync tracker from Google Sheets: {e}")
-        df = pd.DataFrame(columns=["Member", "HabitType"] + [f"Day {i}" for i in range(1, 76)])
-else:
-    df = pd.read_csv(LOCAL_FILE)
-    df = clean_dataframe(df)
+# Load latest progress from Google Sheets on new session startup to ensure fresh data
+if "session_initialized" not in st.session_state:
+    st.session_state["session_initialized"] = True
+    with db_lock:
+        try:
+            df_cloud = pd.read_csv(CSV_URL)
+            df_cloud = clean_dataframe(df_cloud)
+            df_cloud.to_csv(LOCAL_FILE, index=False)
+        except Exception as e:
+            pass
 
-if not os.path.exists(MISSIONS_FILE):
-    try:
-        missions_df = pd.read_csv(MISSIONS_CSV_URL)
-        missions_df.columns = [c.strip() for c in missions_df.columns]
-        missions_df["Name"] = missions_df["Name"].fillna("").astype(str).str.strip()
-        missions_df["Mission"] = missions_df["Mission"].fillna("").astype(str).str.strip()
-        missions_df.to_csv(MISSIONS_FILE, index=False)
-    except Exception as e:
-        st.error(f"⚠️ Failed to sync missions: {e}")
+if "missions_initialized" not in st.session_state:
+    st.session_state["missions_initialized"] = True
+    with db_lock:
+        try:
+            missions_df_cloud = pd.read_csv(MISSIONS_CSV_URL)
+            missions_df_cloud.columns = [c.strip() for c in missions_df_cloud.columns]
+            missions_df_cloud["Name"] = missions_df_cloud["Name"].fillna("").astype(str).str.strip()
+            missions_df_cloud["Mission"] = missions_df_cloud["Mission"].fillna("").astype(str).str.strip()
+            missions_df_cloud.to_csv(MISSIONS_FILE, index=False)
+        except Exception as e:
+            pass
+
+# Load data and missions under database lock
+with db_lock:
+    if os.path.exists(LOCAL_FILE):
+        df = pd.read_csv(LOCAL_FILE)
+        df = clean_dataframe(df)
+    else:
+        df = pd.DataFrame(columns=["Member", "HabitType"] + [f"Day {i}" for i in range(1, 76)])
+
+    if os.path.exists(MISSIONS_FILE):
+        missions_df = pd.read_csv(MISSIONS_FILE)
+    else:
         missions_df = pd.DataFrame(columns=["Name", "Mission"])
-else:
-    missions_df = pd.read_csv(MISSIONS_FILE)
 
 # Check if Streamlit GSheets secrets are configured
 def is_gsheets_configured():
@@ -1147,36 +1156,64 @@ if "gscript_url" not in st.session_state:
         st.session_state["gscript_url"] = ""
 
 # ----------------- AUTO-SAVE SYNC -----------------
-def run_cloud_sync_in_background(df_to_save, gscript_url, session_id):
+def run_cloud_sync_in_background(member, habit_type, day_num, db_val, gscript_url, session_id):
     try:
         # Reset error state for this session on start
         sync_errors[session_id] = ""
         
-        if gscript_url:
-            import requests
-            import json
-            payload = {
-                "headers": df_to_save.columns.tolist(),
-                "rows": df_to_save.values.tolist()
-            }
-            res = requests.post(
-                gscript_url,
-                data=json.dumps(payload),
-                headers={"Content-Type": "application/json"},
-                timeout=25
-            )
-            # Detect 403 Forbidden redirects to Google Accounts page due to bad Apps Script permissions settings
-            if "accounts.google.com" in res.url or "You need access" in res.text or res.status_code == 403:
-                sync_errors[session_id] = "⚠️ Google Sheets Auto-Sync Permission Error: Please redeploy your Apps Script as a Web App and configure 'Who has access' to 'Anyone' (not 'Only myself' or 'Anyone with a Google account')."
-            elif res.status_code != 200:
-                sync_errors[session_id] = f"⚠️ Google Sheets Auto-Sync failed: HTTP {res.status_code} - {res.text[:100]}"
-        elif is_gsheets_configured():
-            from streamlit_gsheets import GSheetsConnection
-            conn = st.connection("gsheets", type=GSheetsConnection)
-            conn.update(
-                spreadsheet=SHEET_URL,
-                data=df_to_save
-            )
+        with db_lock:
+            # 1. Download latest from Google Sheets
+            try:
+                df_cloud = pd.read_csv(CSV_URL)
+                df_cloud = clean_dataframe(df_cloud)
+            except Exception as read_err:
+                import logging
+                logging.error(f"Background cloud read failed: {read_err}")
+                # Fallback to local file if cloud read fails
+                if os.path.exists(LOCAL_FILE):
+                    df_cloud = pd.read_csv(LOCAL_FILE)
+                    df_cloud = clean_dataframe(df_cloud)
+                else:
+                    df_cloud = pd.DataFrame(columns=["Member", "HabitType"] + [f"Day {i}" for i in range(1, 76)])
+            
+            # 2. Update the changed cell
+            match = df_cloud[(df_cloud["Member"] == member) & (df_cloud["HabitType"].str.lower().str.startswith(habit_type.lower()))]
+            if not match.empty:
+                idx = match.index[0]
+                df_cloud.at[idx, f"Day {day_num}"] = db_val
+            
+            # 3. Save the merged result to data.csv
+            df_cloud.to_csv(LOCAL_FILE, index=False)
+            
+            # 4. Prepare for upload
+            df_to_save = df_cloud.rename(columns={"Member": "Name"}).fillna("")
+            
+            # 5. Upload merged data to Google Sheets
+            if gscript_url:
+                import requests
+                import json
+                payload = {
+                    "headers": df_to_save.columns.tolist(),
+                    "rows": df_to_save.values.tolist()
+                }
+                res = requests.post(
+                    gscript_url,
+                    data=json.dumps(payload),
+                    headers={"Content-Type": "application/json"},
+                    timeout=25
+                )
+                # Detect 403 Forbidden redirects to Google Accounts page due to bad Apps Script permissions settings
+                if "accounts.google.com" in res.url or "You need access" in res.text or res.status_code == 403:
+                    sync_errors[session_id] = "⚠️ Google Sheets Auto-Sync Permission Error: Please redeploy your Apps Script as a Web App and configure 'Who has access' to 'Anyone' (not 'Only myself' or 'Anyone with a Google account')."
+                elif res.status_code != 200:
+                    sync_errors[session_id] = f"⚠️ Google Sheets Auto-Sync failed: HTTP {res.status_code} - {res.text[:100]}"
+            elif is_gsheets_configured():
+                from streamlit_gsheets import GSheetsConnection
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                conn.update(
+                    spreadsheet=SHEET_URL,
+                    data=df_to_save
+                )
     except Exception as e:
         import logging
         logging.error(f"Background cloud sync failed: {e}")
@@ -1189,41 +1226,44 @@ def save_and_sync(member, habit_type, day_num):
             return
         new_val = st.session_state[key]
         
-        # Load the latest copy from the shared local file
-        df_to_update = pd.read_csv(LOCAL_FILE)
-        df_to_update = clean_dataframe(df_to_update)
-        
         reverse_map = {"⬜": "", "✅": "Done", "❌": "Failed"}
         db_val = reverse_map.get(new_val, "")
         
-        # Locate the specific row
-        match = df_to_update[(df_to_update["Member"] == member) & (df_to_update["HabitType"].str.lower().str.startswith(habit_type.lower()))]
-        if not match.empty:
-            idx = match.index[0]
-            df_to_update.at[idx, f"Day {day_num}"] = db_val
+        with db_lock:
+            # Load the latest copy from the shared local file
+            if os.path.exists(LOCAL_FILE):
+                df_to_update = pd.read_csv(LOCAL_FILE)
+                df_to_update = clean_dataframe(df_to_update)
+            else:
+                df_to_update = pd.DataFrame(columns=["Member", "HabitType"] + [f"Day {i}" for i in range(1, 76)])
             
-            # Save back immediately to local file
-            df_to_update.to_csv(LOCAL_FILE, index=False)
-            
-            st.toast(f"Saved Day {day_num} for {member}!", icon="💾")
-            
-            # Get session ID for background error tracking
-            from streamlit.runtime.scriptrunner import get_script_run_ctx
-            ctx = get_script_run_ctx()
-            session_id = ctx.session_id if ctx else "global"
-            
-            # Dispatch cloud sync to background thread
-            gscript_url = st.session_state.get("gscript_url", "").strip()
-            df_to_save = df_to_update.rename(columns={"Member": "Name"}).fillna("")
-            
-            if gscript_url or is_gsheets_configured():
-                thread = threading.Thread(
-                    target=run_cloud_sync_in_background,
-                    args=(df_to_save, gscript_url, session_id)
-                )
-                thread.daemon = True
-                thread.start()
+            # Locate the specific row
+            match = df_to_update[(df_to_update["Member"] == member) & (df_to_update["HabitType"].str.lower().str.startswith(habit_type.lower()))]
+            if not match.empty:
+                idx = match.index[0]
+                df_to_update.at[idx, f"Day {day_num}"] = db_val
                 
+                # Save back immediately to local file
+                df_to_update.to_csv(LOCAL_FILE, index=False)
+                
+        st.toast(f"Saved Day {day_num} for {member}!", icon="💾")
+        
+        # Get session ID for background error tracking
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        session_id = ctx.session_id if ctx else "global"
+        
+        # Dispatch cloud sync to background thread
+        gscript_url = st.session_state.get("gscript_url", "").strip()
+        
+        if gscript_url or is_gsheets_configured():
+            thread = threading.Thread(
+                target=run_cloud_sync_in_background,
+                args=(member, habit_type, day_num, db_val, gscript_url, session_id)
+            )
+            thread.daemon = True
+            thread.start()
+            
     except Exception as e:
         st.error(f"Failed to auto-save: {e}")
 
@@ -1241,21 +1281,22 @@ with st.container(border=True):
     with col_sync:
         if st.button("🔄 Sync from Sheet"):
             try:
-                df_cloud = pd.read_csv(CSV_URL)
-                df_cloud = clean_dataframe(df_cloud)
-                df_cloud.to_csv(LOCAL_FILE, index=False)
-                st.session_state["df"] = df_cloud
-                
-                # Fetch fresh missions
-                try:
-                    m_df = pd.read_csv(MISSIONS_CSV_URL)
-                    m_df.columns = [c.strip() for c in m_df.columns]
-                    m_df["Name"] = m_df["Name"].fillna("").astype(str).str.strip()
-                    m_df["Mission"] = m_df["Mission"].fillna("").astype(str).str.strip()
-                    m_df.to_csv(MISSIONS_FILE, index=False)
-                    st.session_state["missions_df"] = m_df
-                except:
-                    pass
+                with db_lock:
+                    df_cloud = pd.read_csv(CSV_URL)
+                    df_cloud = clean_dataframe(df_cloud)
+                    df_cloud.to_csv(LOCAL_FILE, index=False)
+                    st.session_state["df"] = df_cloud
+                    
+                    # Fetch fresh missions
+                    try:
+                        m_df = pd.read_csv(MISSIONS_CSV_URL)
+                        m_df.columns = [c.strip() for c in m_df.columns]
+                        m_df["Name"] = m_df["Name"].fillna("").astype(str).str.strip()
+                        m_df["Mission"] = m_df["Mission"].fillna("").astype(str).str.strip()
+                        m_df.to_csv(MISSIONS_FILE, index=False)
+                        st.session_state["missions_df"] = m_df
+                    except:
+                        pass
                     
                 st.toast("Synchronized with Google Sheet!", icon="🔄")
                 st.rerun()
